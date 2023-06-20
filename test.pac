@@ -1,6 +1,6 @@
 function FindProxyForURL(url, host) {
   // Kiểm tra nếu URL bắt đầu bằng "http://10.133.178.83:8080/"
-  if (url.indexOf("http://10.133.178.83:8080/") === 0) {
+  if (shExpMatch(url, "http://10.133.178.83:8080/*")) {
     return "DIRECT";
   }
   
