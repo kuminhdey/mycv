@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>HLS.js with Token Input</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <title>Video.js HLS với Bearer Token</title>
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <style>
     body {
       font-family: sans-serif;
@@ -22,48 +22,63 @@
       font-size: 16px;
       width: 100%;
       max-width: 800px;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h2>🔐 HLS Player – Nhập Bearer Token</h2>
 
-  <video id="video" controls></video>
+  <h2>🔐 HLS Player – Nhập Bearer Token (Video.js)</h2>
+
+  <video
+    id="my-video"
+    class="video-js vjs-default-skin"
+    controls
+    preload="auto"
+    data-setup="{}"
+  ></video>
 
   <input type="text" id="tokenInput" placeholder="Nhập Bearer Token tại đây" />
   <button onclick="startStream()">Start Stream</button>
 
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+
   <script>
-    const video = document.getElementById('video');
-    const m3u8Url = 'https://kuminhdey.github.io/mycv/minh.m3u8';
+    const videoUrl = 'https://kuminhdey.github.io/mycv/minh.m3u8';
 
     function startStream() {
       const token = document.getElementById('tokenInput').value;
-
       if (!token) {
         alert('Vui lòng nhập Bearer Token');
         return;
       }
 
-      if (Hls.isSupported()) {
-        const hls = new Hls({
-          xhrSetup: function(xhr, url) {
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      // Gắn middleware chỉ 1 lần
+      videojs.use('*', function(player) {
+        return {
+          setSource: function(sourceObj, next) {
+            if (sourceObj.src.endsWith('.m3u8')) {
+              videojs.Vhs.xhr.beforeRequest = function(options) {
+                options.headers = {
+                  ...options.headers,
+                  'Authorization': 'Bearer ' + token
+                };
+                return options;
+              };
+            }
+            next(null, sourceObj);
           }
-        });
+        };
+      });
 
-        hls.loadSource(m3u8Url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          video.play();
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari fallback (không hỗ trợ custom header)
-        video.src = m3u8Url;
-        video.play();
-      } else {
-        alert('HLS is not supported in this browser.');
-      }
+      // Tạo player
+      const player = videojs('my-video');
+      player.src({
+        src: videoUrl,
+        type: 'application/x-mpegURL'
+      });
+
+      player.play();
     }
   </script>
 </body>
