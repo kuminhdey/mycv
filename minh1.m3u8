@@ -1,0 +1,9 @@
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:10
+#EXT-X-MEDIA-SEQUENCE:0
+
+#EXTINF:12.0,
+https://cvx-prod.s3-han02.fptcloud.com/avatar/original-1c9c6170-7081-4b72-9983-b53bcd0f220d-686277.jpg
+
+#EXT-X-ENDLIST
