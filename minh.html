@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HLS.js with Token Input</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f0f0f0;
+    }
+    video {
+      width: 100%;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 800px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔐 HLS Player – Nhập Bearer Token</h2>
+
+  <video id="video" controls></video>
+
+  <input type="text" id="tokenInput" placeholder="Nhập Bearer Token tại đây" />
+  <button onclick="startStream()">Start Stream</button>
+
+  <script>
+    const video = document.getElementById('video');
+    const m3u8Url = 'https://kuminhdey.github.io/mycv/minh.m3u8';
+
+    function startStream() {
+      const token = document.getElementById('tokenInput').value;
+
+      if (!token) {
+        alert('Vui lòng nhập Bearer Token');
+        return;
+      }
+
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          xhrSetup: function(xhr, url) {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+          }
+        });
+
+        hls.loadSource(m3u8Url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari fallback (không hỗ trợ custom header)
+        video.src = m3u8Url;
+        video.play();
+      } else {
+        alert('HLS is not supported in this browser.');
+      }
+    }
+  </script>
+</body>
+</html>
