@@ -1,12 +1,12 @@
 #EXTM3U
 #EXT-X-VERSION:3
-#EXT-X-TARGETDURATION:10
+#EXT-X-TARGETDURATION:270
 #EXT-X-MEDIA-SEQUENCE:0
 
-#EXTINF:12.0,
+#EXTINF:269.0,
 https://api-chat.fpt.com/storage/room/686c7e68e175c98a1dabd414/c249ac4a-9170-4410-b3ae-f06c9eb5f3b6-output123.png
 
-#EXTINF:12.0,
+#EXTINF:47.0,
 https://api-chat.fpt.com/storage/room/686c7e68e175c98a1dabd414/17950924-801a-414e-9513-af9d2483f0b3-output.png
 
 #EXT-X-ENDLIST
