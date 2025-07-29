@@ -2,8 +2,8 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Play M3U8 Bearer Token 1</title>
-  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+  <title>Phát M3U8 với Bearer Token (Proxy CORS)</title>
+  <link href="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video-js.min.css" rel="stylesheet" />
   <style>
     body {
       font-family: sans-serif;
@@ -12,6 +12,7 @@
       max-width: 700px;
       margin: auto;
     }
+
     input, textarea, button {
       width: 100%;
       margin-bottom: 1rem;
@@ -20,14 +21,17 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+
     button {
-      background-color: #007bff;
+      background-color: #28a745;
       color: white;
       cursor: pointer;
     }
+
     button:hover {
-      background-color: #0056b3;
+      background-color: #218838;
     }
+
     #video-container {
       margin-top: 2rem;
       display: none;
@@ -36,32 +40,31 @@
 </head>
 <body>
 
-  <h2>🔐 Phát video M3U8 với Bearer Token 2</h2>
+  <h2>🔐 Phát video M3U8 qua CORS Proxy + Bearer Token</h2>
 
-  <input type="text" id="m3u8-url" placeholder="Nhập URL M3U8">
-  <textarea id="bearer-token" placeholder="Bearer Token..."></textarea>
-  <button onclick="loadVideo()">Phát Video</button>
+  <input type="text" id="m3u8-url" placeholder="Nhập URL M3U8 (dạng https://api-place.fpt.com/...)">
+  <textarea id="bearer-token" placeholder="Bearer Token tại đây..."></textarea>
+  <button onclick="loadVideo()">🎬 Phát Video</button>
 
   <div id="video-container">
     <video id="video-player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360"></video>
   </div>
 
-  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video.min.js"></script>
 
   <script>
     let player;
     let token = '';
 
-    // Cấu hình VHS để chèn Header Authorization khi load HLS
+    // Hook thêm Bearer token nếu dùng cors-anywhere
     videojs.use('*', function(player) {
       return {
         setSource: function(sourceObj, next) {
-          if (sourceObj.src.endsWith('.m3u8')) {
+          if (sourceObj.src.includes('cors-anywhere')) {
             videojs.Vhs.xhr.beforeRequest = function(options) {
               options.headers = {
                 ...options.headers,
-                'Authorization': 'Bearer ' + token,
-                'Access-Control-Allow-Origin': 'https://place.fpt.com'
+                'Authorization': 'Bearer ' + token
               };
               return options;
             };
@@ -72,26 +75,30 @@
     });
 
     function loadVideo() {
-      const url = document.getElementById('m3u8-url').value.trim();
+      const rawUrl = document.getElementById('m3u8-url').value.trim();
       token = document.getElementById('bearer-token').value.trim();
 
-      if (!url || !token) {
-        alert("⚠️ Nhập đầy đủ M3U8 URL và Bearer Token.");
+      if (!rawUrl || !token) {
+        alert("⚠️ Vui lòng nhập đầy đủ M3U8 URL và Bearer Token.");
         return;
       }
+
+      // Gắn prefix CORS proxy
+      const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + rawUrl;
+
+      const container = document.getElementById('video-container');
+      container.style.display = 'block';
 
       if (player) {
         player.dispose();
       }
-
-      document.getElementById('video-container').style.display = 'block';
 
       player = videojs('video-player', {
         controls: true,
         autoplay: false,
         preload: 'auto',
         sources: [{
-          src: url,
+          src: proxyUrl,
           type: 'application/x-mpegURL',
         }],
         html5: {
@@ -106,6 +113,5 @@
       });
     }
   </script>
-
 </body>
 </html>
