@@ -7,15 +7,31 @@
   <style>
     body {
       font-family: sans-serif;
-      background: #f9f9f9;
+      background: #f4f4f4;
       padding: 2rem;
+      max-width: 700px;
+      margin: auto;
     }
+
     input, textarea, button {
       width: 100%;
       margin-bottom: 1rem;
-      padding: 0.5rem;
+      padding: 0.6rem;
       font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
     #video-container {
       margin-top: 2rem;
       display: none;
@@ -24,10 +40,10 @@
 </head>
 <body>
 
-  <h2>Nhập Link M3U8 và Bearer Token để phát video</h2>
+  <h2>🔑 Phát video M3U8 có Bearer Token</h2>
 
-  <input type="text" id="m3u8-url" placeholder="Nhập M3U8 URL tại đây">
-  <textarea id="bearer-token" placeholder="Bearer Token..."></textarea>
+  <input type="text" id="m3u8-url" placeholder="Nhập đường dẫn M3U8 (https://...)">
+  <textarea id="bearer-token" placeholder="Nhập Bearer Token tại đây..."></textarea>
   <button onclick="loadVideo()">Phát Video</button>
 
   <div id="video-container">
@@ -35,7 +51,6 @@
   </div>
 
   <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-hls@5.15.0/dist/videojs-contrib-hls.min.js"></script>
 
   <script>
     let player;
@@ -45,49 +60,45 @@
       const token = document.getElementById('bearer-token').value.trim();
 
       if (!url || !token) {
-        alert("Vui lòng nhập đầy đủ URL và Token.");
+        alert("⚠️ Vui lòng nhập đầy đủ M3U8 URL và Bearer Token.");
         return;
       }
 
-      // Xóa player cũ nếu có
       if (player) {
         player.dispose();
       }
 
-      // Hiển thị player
       document.getElementById('video-container').style.display = 'block';
 
-      // Tạo player mới
+      // Ghi đè XMLHttpRequest để thêm Authorization Header
+      const OriginalXHR = window.XMLHttpRequest;
+      function CustomXHR() {
+        const xhr = new OriginalXHR();
+        const originalOpen = xhr.open;
+        xhr.open = function () {
+          originalOpen.apply(xhr, arguments);
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        };
+        return xhr;
+      }
+      window.XMLHttpRequest = CustomXHR;
+
       player = videojs('video-player', {
-        techOrder: ['html5'],
+        controls: true,
+        autoplay: false,
+        preload: 'auto',
         sources: [{
           src: url,
           type: 'application/x-mpegURL',
-          withCredentials: false
         }],
         html5: {
-          hls: {
-            overrideNative: true
-          },
-          nativeAudioTracks: false,
-          nativeVideoTracks: false
+          vhs: {
+            withCredentials: false
+          }
         }
       });
 
-      // Inject header khi gửi request
       player.ready(() => {
-        const origXhr = window.XMLHttpRequest;
-        function CustomXHR() {
-          const xhr = new origXhr();
-          const origOpen = xhr.open;
-          xhr.open = function () {
-            origOpen.apply(this, arguments);
-            this.setRequestHeader('Authorization', `Bearer ${token}`);
-          };
-          return xhr;
-        }
-        window.XMLHttpRequest = CustomXHR;
-        player.src({ src: url, type: 'application/x-mpegURL' });
         player.play();
       });
     }
