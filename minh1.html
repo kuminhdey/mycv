@@ -36,7 +36,7 @@
 </head>
 <body>
 
-  <h2>🔐 Phát video M3U8 với Bearer Token</h2>
+  <h2>🔐 Phát video M3U8 với Bearer Token 1</h2>
 
   <input type="text" id="m3u8-url" placeholder="Nhập URL M3U8">
   <textarea id="bearer-token" placeholder="Bearer Token..."></textarea>
@@ -60,7 +60,8 @@
             videojs.Vhs.xhr.beforeRequest = function(options) {
               options.headers = {
                 ...options.headers,
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + token,
+                'Access-Control-Allow-Origin': 'api-place.fpt.com'
               };
               return options;
             };
