@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Play M3U8 với Bearer Token</title>
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+    }
+    input, textarea, button {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    #video-container {
+      margin-top: 2rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Nhập Link M3U8 và Bearer Token để phát video</h2>
+
+  <input type="text" id="m3u8-url" placeholder="Nhập M3U8 URL tại đây">
+  <textarea id="bearer-token" placeholder="Bearer Token..."></textarea>
+  <button onclick="loadVideo()">Phát Video</button>
+
+  <div id="video-container">
+    <video id="video-player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360"></video>
+  </div>
+
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-hls@5.15.0/dist/videojs-contrib-hls.min.js"></script>
+
+  <script>
+    let player;
+
+    function loadVideo() {
+      const url = document.getElementById('m3u8-url').value.trim();
+      const token = document.getElementById('bearer-token').value.trim();
+
+      if (!url || !token) {
+        alert("Vui lòng nhập đầy đủ URL và Token.");
+        return;
+      }
+
+      // Xóa player cũ nếu có
+      if (player) {
+        player.dispose();
+      }
+
+      // Hiển thị player
+      document.getElementById('video-container').style.display = 'block';
+
+      // Tạo player mới
+      player = videojs('video-player', {
+        techOrder: ['html5'],
+        sources: [{
+          src: url,
+          type: 'application/x-mpegURL',
+          withCredentials: false
+        }],
+        html5: {
+          hls: {
+            overrideNative: true
+          },
+          nativeAudioTracks: false,
+          nativeVideoTracks: false
+        }
+      });
+
+      // Inject header khi gửi request
+      player.ready(() => {
+        const origXhr = window.XMLHttpRequest;
+        function CustomXHR() {
+          const xhr = new origXhr();
+          const origOpen = xhr.open;
+          xhr.open = function () {
+            origOpen.apply(this, arguments);
+            this.setRequestHeader('Authorization', `Bearer ${token}`);
+          };
+          return xhr;
+        }
+        window.XMLHttpRequest = CustomXHR;
+        player.src({ src: url, type: 'application/x-mpegURL' });
+        player.play();
+      });
+    }
+  </script>
+</body>
+</html>
