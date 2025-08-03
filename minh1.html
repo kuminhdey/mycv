@@ -2,115 +2,112 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Phát M3U8 với Bearer Token (Proxy CORS)</title>
-  <link href="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video-js.min.css" rel="stylesheet" />
+  <title>HLS qua Proxy có Bearer Token</title>
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <style>
     body {
       font-family: sans-serif;
-      background: #f4f4f4;
+      background: #f0f0f0;
       padding: 2rem;
-      max-width: 700px;
+    }
+
+    .container {
+      max-width: 800px;
       margin: auto;
     }
 
-    input, textarea, button {
+    video {
       width: 100%;
-      margin-bottom: 1rem;
-      padding: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    input, button, select {
+      padding: 0.5rem;
       font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      margin-top: 0.5rem;
+      width: 100%;
+      box-sizing: border-box;
     }
 
-    button {
-      background-color: #28a745;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #218838;
-    }
-
-    #video-container {
-      margin-top: 2rem;
-      display: none;
+    select {
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h2>Phát video M3U8 qua Proxy</h2>
 
-  <h2>🔐 Phát video M3U8 qua CORS Proxy + Bearer Token</h2>
+    <input id="m3u8Input" placeholder="Nhập link .m3u8..." value="" />
+    <button onclick="loadVideo()">Phát video</button>
 
-  <input type="text" id="m3u8-url" placeholder="Nhập URL M3U8 (dạng https://...)">
-  <textarea id="bearer-token" placeholder="Bearer Token tại đây..."></textarea>
-  <button onclick="loadVideo()">🎬 Phát Video</button>
+    <select id="qualitySelector" onchange="setQuality(this.value)">
+      <option value="-1">Auto</option>
+    </select>
 
-  <div id="video-container">
-    <video id="video-player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360"></video>
+    <video id="video" class="video-js vjs-default-skin" controls preload="auto" playsinline></video>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    let player;
-    let token = '';
-
-    // Hook thêm Bearer token nếu dùng cors-anywhere
-    videojs.use('*', function(player) {
-      return {
-        setSource: function(sourceObj, next) {
-          if (sourceObj.src.includes('cors-anywhere')) {
-            videojs.Vhs.xhr.beforeRequest = function(options) {
-              options.headers = {
-                ...options.headers,
-                'Authorization': 'Bearer ' + token
-              };
-              return options;
-            };
-          }
-          next(null, sourceObj);
-        }
-      };
-    });
+    const video = document.getElementById('video');
+    const qualitySelector = document.getElementById('qualitySelector');
+    const proxy = "https://movie-z77u.onrender.com/proxy?url=";
+    let hls;
 
     function loadVideo() {
-      const rawUrl = document.getElementById('m3u8-url').value.trim();
-      token = document.getElementById('bearer-token').value.trim();
-
-      if (!rawUrl || !token) {
-        alert("⚠️ Vui lòng nhập đầy đủ M3U8 URL và Bearer Token.");
+      const originalUrl = document.getElementById('m3u8Input').value.trim();
+      if (!originalUrl.endsWith('.m3u8')) {
+        alert('Vui lòng nhập đúng link .m3u8');
         return;
       }
 
-      // Gắn prefix CORS proxy
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + rawUrl;
+      const proxiedUrl = proxy + encodeURIComponent(originalUrl);
 
-      const container = document.getElementById('video-container');
-      container.style.display = 'block';
-
-      if (player) {
-        player.dispose();
+      if (hls) {
+        hls.destroy();
+        hls = null;
       }
 
-      player = videojs('video-player', {
-        controls: true,
-        autoplay: false,
-        preload: 'auto',
-        sources: [{
-          src: proxyUrl,
-          type: 'application/x-mpegURL',
-        }],
-        html5: {
-          vhs: {
-            withCredentials: false
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          xhrSetup: function (xhr, url) {
+            const rewrittenUrl = proxy + encodeURIComponent(url);
+            xhr.open('GET', rewrittenUrl, true);
           }
-        }
-      });
+        });
 
-      player.ready(() => {
-        player.play();
+        hls.loadSource(proxiedUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function (_, data) {
+          populateQualitySelector(data.levels);
+          video.play();
+        });
+
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = proxiedUrl;
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
+      }
+    }
+
+    function populateQualitySelector(levels) {
+      qualitySelector.innerHTML = '<option value="-1">Auto</option>';
+      levels.forEach((level, index) => {
+        const label = `${level.height}p (${Math.round(level.bitrate / 1000)}kbps)`;
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = label;
+        qualitySelector.appendChild(option);
       });
+    }
+
+    function setQuality(index) {
+      if (hls) {
+        hls.currentLevel = parseInt(index);
+      }
     }
   </script>
 </body>
