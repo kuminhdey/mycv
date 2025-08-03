@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Phát Video MP4 qua Signed URL</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 1rem;
+      margin: 5px;
+      width: 80%;
+      max-width: 600px;
+    }
+    video {
+      margin-top: 2rem;
+      max-width: 800px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Phát video từ FPT (qua Proxy Signed URL)</h1>
+
+  <input
+    id="urlInput"
+    type="text"
+    placeholder="Nhập asset URL (VD: assets/group/.../post/.../video-id)"
+  />
+  <br>
+  <button onclick="loadVideo()">Phát Video</button>
+
+  <video id="videoPlayer" controls></video>
+
+  <script>
+    const proxyBase = 'https://movie-z77u.onrender.com';
+
+    async function loadVideo() {
+      const input = document.getElementById('urlInput').value.trim();
+      if (!input) {
+        alert('Vui lòng nhập đường dẫn asset');
+        return;
+      }
+
+      const proxyApi = `${proxyBase}/photo?url=` + encodeURIComponent(input);
+
+      try {
+        const res = await fetch(proxyApi);
+        const data = await res.json();
+
+        if (data.signedUrl) {
+          const player = document.getElementById('videoPlayer');
+          player.src = data.signedUrl;
+          player.load();
+          player.play();
+        } else {
+          alert('Không lấy được signed URL từ server.');
+          console.error(data);
+        }
+      } catch (err) {
+        console.error('Lỗi khi gọi proxy:', err);
+        alert('Lỗi khi tải video. Xem console.');
+      }
+    }
+  </script>
+
+</body>
+</html>
