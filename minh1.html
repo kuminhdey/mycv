@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>HLS qua Proxy có Bearer Token</title>
+  <title>HLS Proxy Player</title>
   <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <style>
     body {
@@ -38,14 +38,22 @@
   <div class="container">
     <h2>Phát video M3U8 qua Proxy</h2>
 
-    <input id="m3u8Input" placeholder="Nhập link .m3u8..." value="" />
+    <input id="m3u8Input" placeholder="Nhập link .m3u8..." />
     <button onclick="loadVideo()">Phát video</button>
 
     <select id="qualitySelector" onchange="setQuality(this.value)">
       <option value="-1">Auto</option>
     </select>
 
-    <video id="video" class="video-js vjs-default-skin" controls preload="auto" playsinline></video>
+    <video
+      id="video"
+      class="video-js vjs-default-skin"
+      controls
+      playsinline
+      muted
+      autoplay
+      preload="auto"
+    ></video>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -72,8 +80,9 @@
       if (Hls.isSupported()) {
         hls = new Hls({
           xhrSetup: function (xhr, url) {
-            const rewrittenUrl = proxy + encodeURIComponent(url);
-            xhr.open('GET', rewrittenUrl, true);
+            const proxied = proxy + encodeURIComponent(url);
+            xhr.open('GET', proxied, true);
+            xhr.withCredentials = false;
           }
         });
 
