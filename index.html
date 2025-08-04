@@ -197,7 +197,7 @@
                             <!-- DOWNLOAD CV BUTTON -->
                             <a href="dangducminh_cv.pdf" target="_blank"  id="download-cv" class="btn waves-effect">Download CV</a>
                             <!-- CONTACT BUTTON -->
-                            <a href="https://www.facebook.com/DM7CR7" target="_blank"  class="btn waves-effect">Contact Me</a>
+                            <a href="https://www.facebook.com/DM7CR7" id="contact_me" target="_blank"  class="btn waves-effect">Contact Me</a>
                         </div>
                     </div>
                 </div>
@@ -644,9 +644,17 @@
 </script>
     <script>
   document.getElementById('download-cv').addEventListener('click', function () {
-    gtag('event', 'click', {
+    gtag('event', 'download_cv_click', {
       event_category: 'cv',
       event_label: 'download_cv'
+    });
+  });
+</script>
+<script>
+  document.getElementById('contact-me').addEventListener('click', function () {
+    gtag('event', 'contact_me_click', {
+      event_category: 'contact',
+      event_label: 'contact_me'
     });
   });
 </script>
