@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Upload & Download FPT S3 Demo</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 40px;
+    }
+
+    #log {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 5px;
+      max-width: 900px;
+      word-break: break-all;
+    }
+
+    input[type=file] {
+      margin-bottom: 16px;
+    }
+
+    button {
+      margin-left: 12px;
+    }
+
+    pre {
+      background: #eee;
+      padding: 6px;
+    }
+
+    #downloadBtn {
+      margin-top: 16px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>upload file và tải file về</h2>
+  <input type="file" id="fileInput" />
+  <button id="uploadBtn" disabled>Upload & Comment</button>
+  <button id="downloadBtn">Download file</button>
+  <div id="log"></div>
+
+  <script>
+    // ==== CONFIG ====
+    const PROXY = "https://movie-z77u.onrender.com";
+    const PRESIGN_API = PROXY + '/proxy?url=' + encodeURIComponent('https://api-place.fpt.com/api/files/presign/file');
+    const CALLBACK_API = PROXY + '/proxy?url=' + encodeURIComponent('https://api-place.fpt.com/api/files/callback/file');
+    const GRAPHQL_API = PROXY + '/proxy?url=' + encodeURIComponent('https://api-place.fpt.com/api/graphql');
+    const TENANT_ID = 'FPT';
+    const POST_ID = '01987345-4ba8-78f6-91b6-f0eea11f8dfc';   // <-- Đổi thành postId thật của bạn
+
+    // ==== LOGGING ====
+    function log(msg, obj) {
+      const box = document.getElementById('log');
+      box.innerHTML += "<div>" + msg + (obj ? "<br><pre>" + JSON.stringify(obj, null, 2) + "</pre>" : "") + "</div>";
+      box.scrollTop = box.scrollHeight;
+    }
+    function clearLog() { document.getElementById('log').innerHTML = ""; }
+
+    let selectedFile = null;
+    let signature = null;
+    let lastFilePath = null;
+    let lastOriginalFileName = null;
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      clearLog();
+      selectedFile = e.target.files[0];
+      document.getElementById('downloadBtn').style.display = 'none';
+      lastFilePath = null;
+      lastOriginalFileName = null;
+      if (!selectedFile) {
+        document.getElementById('uploadBtn').disabled = true;
+        return;
+      }
+      log("Đã chọn file:", {
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        contentType: selectedFile.type || "Không xác định"
+      });
+      document.getElementById('uploadBtn').disabled = false;
+    });
+
+    document.getElementById('uploadBtn').addEventListener('click', async function () {
+      if (!selectedFile) return;
+      document.getElementById('uploadBtn').disabled = true;
+      document.getElementById('downloadBtn').style.display = 'none';
+      log("Bắt đầu lấy pre-signed URL...");
+
+      // ---- STEP 1: Lấy pre-signed URL qua proxy ----
+      const presignPayload = {
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        contentType: selectedFile.type || "application/octet-stream"
+      };
+      let presignResp;
+      try {
+        presignResp = await fetch(PRESIGN_API, {
+          method: "POST",
+          headers: {
+            "x-tenant-id": TENANT_ID,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(presignPayload)
+        });
+        if (!presignResp.ok) throw new Error("Presign API error: " + presignResp.status);
+      } catch (e) {
+        log("Lỗi khi lấy pre-signed URL: " + e.message);
+        document.getElementById('uploadBtn').disabled = false;
+        return;
+      }
+      const presignData = await presignResp.json();
+      log("Đã nhận pre-signed URL:", presignData);
+
+      const uploadUrl = presignData.uploadUrl || presignData.uploadurl;
+      signature = presignData.signature;
+      const uploadContentType = presignData.contentType || selectedFile.type || "application/octet-stream";
+
+      // ---- STEP 2: Upload file lên S3/FPT Cloud ----
+      log("Đang upload file lên cloud...");
+      try {
+        const uploadResp = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": uploadContentType
+          },
+          body: selectedFile
+        });
+        if (!uploadResp.ok) throw new Error("Upload S3 error: " + uploadResp.status);
+        log("Upload file thành công!");
+      } catch (e) {
+        log("Lỗi upload S3: " + e.message);
+        document.getElementById('uploadBtn').disabled = false;
+        return;
+      }
+
+      // ---- STEP 3: Gửi callback xác nhận upload qua proxy, lấy key ----
+      log("Gửi callback xác nhận upload...");
+      let key, originalFileName;
+      try {
+        const callbackResp = await fetch(CALLBACK_API, {
+          method: "POST",
+          headers: {
+            "x-tenant-id": TENANT_ID,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ signature })
+        });
+        if (!callbackResp.ok) throw new Error("Callback API error: " + callbackResp.status);
+        const callbackData = await callbackResp.json();
+        log("Callback thành công, backend trả về:", callbackData);
+
+        key = callbackData.key;
+        originalFileName = callbackData.originalFileName;
+      } catch (e) {
+        log("Lỗi callback: " + e.message);
+        document.getElementById('uploadBtn').disabled = false;
+        return;
+      }
+
+      // ---- STEP 4: Gửi GraphQL mutation để tạo comment với file đính kèm ----
+      log("Gửi GraphQL mutation tạo comment...");
+      try {
+        const graphqlQuery = {
+          query: `mutation useCreateCommentMutation($input: CreateCommentInput!) {
+            createComment(input: $input) {
+              attachments {
+                filePath
+                originalFileName
+              }
+            }
+          }`,
+          variables: {
+            input: {
+              postId: POST_ID,
+              actor: { type: "USER" },
+              composedText: {
+                blockTypes: [],
+                blocks: [],
+                inlineStyles: [],
+                blockDepths: [],
+                entities: [],
+                entityMap: "{}",
+                blockData: []
+              },
+              rawMessage: "",
+              attachments: [
+                {
+                  type: "OTHER",
+                  key: key,
+                  originalFileName: originalFileName
+                }
+              ]
+            }
+          }
+        };
+
+        const graphqlResp = await fetch(GRAPHQL_API, {
+          method: "POST",
+          headers: {
+            "x-tenant-id": TENANT_ID,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(graphqlQuery)
+        });
+
+        if (!graphqlResp.ok) throw new Error("GraphQL API error: " + graphqlResp.status);
+        const graphqlData = await graphqlResp.json();
+        log("GraphQL response:", graphqlData);
+
+        // In ra filePath và fileName của file vừa upload
+        const attach = graphqlData?.data?.createComment?.attachments?.[0];
+        if (attach) {
+          log("Kết quả:\n- filePath: " + attach.filePath + "\n- fileName: " + attach.originalFileName);
+          lastFilePath = attach.filePath;
+          lastOriginalFileName = attach.originalFileName;
+          showDownloadButton();
+        } else {
+          log("Không tìm thấy thông tin file trong response!");
+          document.getElementById('downloadBtn').style.display = 'none';
+        }
+      } catch (e) {
+        log("Lỗi GraphQL: " + e.message);
+        document.getElementById('downloadBtn').style.display = 'none';
+      }
+
+      document.getElementById('uploadBtn').disabled = false;
+    });
+
+    // ==== DOWNLOAD BUTTON ====
+    function showDownloadButton() {
+      const btn = document.getElementById('downloadBtn');
+      if (!lastFilePath || !lastOriginalFileName) {
+        btn.style.display = 'none';
+        return;
+      }
+      log('Đã tạo nút download cho file: ' + lastOriginalFileName);
+      btn.style.display = '';
+      btn.style.display = 'block'
+      btn.onclick = function () {
+        downloadFile(lastFilePath, lastOriginalFileName);
+      };
+    }
+
+    async function downloadFile(filePath, originalFileName) {
+      log('Đang lấy signed URL từ proxy...');
+      try {
+        // 1. Gọi proxy để lấy signedUrl
+        const PHOTO_API = PROXY + '/photo?url=' + encodeURIComponent(filePath);
+        const photoResp = await fetch(PHOTO_API, {
+          // thêm header nếu cần
+          // 'authorization': 'Bearer ' + BEARER
+        });
+        if (!photoResp.ok) throw new Error('Lỗi lấy signedUrl: ' + photoResp.status);
+        const photoData = await photoResp.json();
+        const signedUrl = photoData.signedUrl;
+        if (!signedUrl) throw new Error('Không có signedUrl trong response');
+
+        log('Đã lấy signedUrl, mở file ở tab mới...');
+        window.open(signedUrl, '_blank'); // mở file ở tab mới
+
+        // Nếu muốn log thêm tên file:
+        log('Đã mở file: ' + originalFileName);
+
+      } catch (e) {
+        log('Lỗi khi tải file: ' + e.message);
+      }
+    }
+  </script>
+</body>
+
+</html>
