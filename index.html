@@ -195,7 +195,7 @@
                     <div id="about-btn" class="card-action">
                         <div class="about-btn">
                             <!-- DOWNLOAD CV BUTTON -->
-                            <a href="dangducminh_cv.pdf" target="_blank"  class="btn waves-effect">Download CV</a>
+                            <a href="dangducminh_cv.pdf" target="_blank"  id="download-cv" class="btn waves-effect">Download CV</a>
                             <!-- CONTACT BUTTON -->
                             <a href="https://www.facebook.com/DM7CR7" target="_blank"  class="btn waves-effect">Contact Me</a>
                         </div>
@@ -641,6 +641,14 @@
   gtag('js', new Date());
 
   gtag('config', 'G-MPTL3VLTJQ');
+</script>
+    <script>
+  document.getElementById('download-cv').addEventListener('click', function () {
+    gtag('event', 'click', {
+      event_category: 'cv',
+      event_label: 'download_cv'
+    });
+  });
 </script>
 
 
