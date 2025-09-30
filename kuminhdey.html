@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ECIES Access Token Generator (P-256)</title>
+  <style>
+    :root { --bg:#0b1020; --panel:#121a2e; --txt:#e8eefc; --muted:#8aa0c7; --acc:#5eead4; --err:#ff6b6b; --ok:#86efac; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; color:var(--txt); background:linear-gradient(180deg,#0b1020,#0c1428); }
+    .wrap{ max-width:880px; margin:32px auto; padding:0 16px; }
+    h1{ font-size:22px; margin:0 0 16px; }
+    .card{ background:var(--panel); border:1px solid #1c2747; border-radius:16px; padding:16px; margin-bottom:16px; box-shadow:0 6px 30px rgba(0,0,0,.25); }
+    label{ display:block; font-weight:600; color:var(--muted); margin:8px 0; }
+    textarea, input[type="text"], input[type="number"]{
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid #23325c; background:#0f1730; color:var(--txt);
+      font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    textarea{ min-height:140px; resize:vertical; }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid #223158; color:#071120;
+      background:linear-gradient(180deg,#8eead8,#5eead4); font-weight:700; cursor:pointer; user-select:none; }
+    .btn.secondary{ background:#0f1730; color:var(--txt); border-color:#2a3a6f; }
+    .btn:active{ transform:translateY(1px); }
+    .hint{ color:var(--muted); font-size:12px; }
+    .mono{ font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:#0c1328; border:1px dashed #2a3a6f; padding:10px; border-radius:10px; overflow:auto; }
+    .ok{ color:var(--ok); }
+    .err{ color:var(--err); }
+    .footer{ text-align:center; color:#7c93c7; font-size:12px; margin-top:18px; }
+    @media (max-width:720px){ .row{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>ECIES Access Token Generator (P-256)</h1>
+    <div class="card">
+      <label>Public Key (PEM, P-256, SPKI “BEGIN PUBLIC KEY”)</label>
+      <textarea id="pubPem" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea>
+      <div class="row">
+        <div>
+          <label>Timestamp (ms) <span class="hint">(để trống = dùng thời gian hiện tại)</span></label>
+          <input id="ts" type="text" placeholder="vd: 1758728247702" />
+        </div>
+        <div>
+          <label>Info (HKDF) <span class="hint">(mặc định phải là “ecies-p256-timestamp”)</span></label>
+          <input id="info" type="text" value="ecies-p256-timestamp" />
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="btnGen">Generate Token</button>
+        <button class="btn secondary" id="btnReset">Reset</button>
+      </div>
+      <div id="msg" class="hint" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <label>Kết quả (JSON {v, epk, iv, salt, ct} – các trường là base64url)</label>
+      <pre id="jsonOut" class="mono" style="min-height:88px;"></pre>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn secondary" id="copyJson">Copy JSON</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Access Token (Base64 của chuỗi JSON ở trên)</label>
+      <textarea id="tokenOut" readonly placeholder="(sẽ hiện sau khi Generate)"></textarea>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="copyToken">Copy Access Token</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      Hoạt động 100% trong trình duyệt · Không gửi khóa/dữ liệu ra ngoài · Yêu cầu HTTPS để dùng WebCrypto
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+/* ===== Helpers: Base64 / Base64URL ===== */
+const te = new TextEncoder();
+const td = new TextDecoder();
+
+function u8ToB64(u8){ let s=''; for (let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
+function b64ToU8(b64){ const bin = atob(b64); const u8 = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i); return u8; }
+function u8ToB64url(u8){ return u8ToB64(u8).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64urlToU8(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return b64ToU8(s); }
+function strToB64(s){ return u8ToB64(te.encode(s)); }
+
+/* ===== PEM (SPKI) parsing ===== */
+function parsePublicKeyPem(pem){
+  const clean = pem.trim()
+    .replace(/-----BEGIN PUBLIC KEY-----/g,'')
+    .replace(/-----END PUBLIC KEY-----/g,'')
+    .replace(/\s+/g,'');
+  if (!clean) throw new Error('PEM rỗng hoặc sai định dạng.');
+  return b64ToU8(clean).buffer; // SPKI (DER)
+}
+
+/* ===== Crypto (ECIES with P-256 + HKDF-SHA256 + AES-GCM) ===== */
+async function importRecipientPublic(spkiBuf){
+  return crypto.subtle.importKey(
+    'spki',
+    spkiBuf,
+    { name:'ECDH', namedCurve:'P-256' },
+    false,
+    []
+  );
+}
+
+async function generateEphemeral(){
+  return crypto.subtle.generateKey({ name:'ECDH', namedCurve:'P-256' }, true, ['deriveKey','deriveBits']);
+}
+
+async function exportRawPublic(key){
+  // 65-byte uncompressed point (0x04 || X || Y)
+  return new Uint8Array(await crypto.subtle.exportKey('raw', key));
+}
+
+function randU8(len){ const u = new Uint8Array(len); crypto.getRandomValues(u); return u; }
+
+async function deriveAesKeyHKDF(sharedSecretBits, saltU8, infoStr){
+  const sharedRaw = new Uint8Array(sharedSecretBits);
+  const hkdfBase = await crypto.subtle.importKey('raw', sharedRaw, 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name:'HKDF', hash:'SHA-256', salt: saltU8, info: te.encode(infoStr) },
+    hkdfBase,
+    { name:'AES-GCM', length:256 },
+    false,
+    ['encrypt','decrypt']
+  );
+}
+
+/* ===== Core: Make token ===== */
+async function makeToken({ publicKeyPem, timestampMs, info = 'ecies-p256-timestamp' }){
+  // 1) Parse & import recipient public (SPKI, P-256)
+  const spki = parsePublicKeyPem(publicKeyPem);
+  const recipPub = await importRecipientPublic(spki);
+
+  // 2) Ephemeral ECDH key pair
+  const eph = await generateEphemeral();
+  const ephRawPub = await exportRawPublic(eph.publicKey); // Uint8Array
+
+  // 3) Derive shared secret & HKDF → AES-GCM key
+  const sharedBits = await crypto.subtle.deriveBits({ name:'ECDH', public: recipPub }, eph.privateKey, 256);
+  const salt = randU8(16);           // 16 bytes salt
+  const iv   = randU8(12);           // 12 bytes IV for GCM
+  const aes  = await deriveAesKeyHKDF(sharedBits, salt, info);
+
+  // 4) Plaintext = timestamp ms as ASCII string
+  const tsStr = String(timestampMs ?? Date.now());
+  const ctBuf = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, aes, te.encode(tsStr));
+  const ct = new Uint8Array(ctBuf);
+
+  // 5) JSON payload (fields are base64url)
+  const payload = {
+    v: 1,
+    epk: u8ToB64url(ephRawPub),
+    iv:  u8ToB64url(iv),
+    salt:u8ToB64url(salt),
+    ct:  u8ToB64url(ct),
+  };
+
+  // 6) Access Token = Base64(JSON string)
+  const jsonStr = JSON.stringify(payload);
+  const tokenB64 = strToB64(jsonStr);
+
+  return { json: payload, jsonStr, tokenB64, tsStr, nowIso: new Date(Number(tsStr)).toISOString() };
+}
+
+/* ===== UI glue ===== */
+const $ = (sel) => document.querySelector(sel);
+const pubPemEl = $('#pubPem');
+const tsEl = $('#ts');
+const infoEl = $('#info');
+const msgEl = $('#msg');
+const jsonOutEl = $('#jsonOut');
+const tokenOutEl = $('#tokenOut');
+
+function setMsg(txt, ok=false){
+  msgEl.innerHTML = txt ? (ok ? `<span class="ok">${txt}</span>` : `<span class="err">${txt}</span>`) : '';
+}
+
+function showResult({ jsonStr, tokenB64, tsStr, nowIso }){
+  jsonOutEl.textContent = jsonStr;
+  tokenOutEl.value = tokenB64;
+  setMsg(`Đã tạo token cho timestamp ${tsStr} (${nowIso}).`, true);
+}
+
+async function onGenerate(){
+  setMsg('');
+  jsonOutEl.textContent = '';
+  tokenOutEl.value = '';
+
+  const pem = pubPemEl.value.trim();
+  const info = infoEl.value.trim() || 'ecies-p256-timestamp';
+  const tsIn = tsEl.value.trim();
+  const ts = tsIn ? Number(tsIn) : Date.now();
+
+  if (!pem) return setMsg('Vui lòng dán Public Key PEM.');
+  if (!Number.isFinite(ts) || ts <= 0) return setMsg('Timestamp không hợp lệ.');
+
+  try{
+    const out = await makeToken({ publicKeyPem: pem, timestampMs: ts, info });
+    showResult(out);
+  }catch(err){
+    console.error(err);
+    setMsg(err?.message || String(err));
+  }
+}
+
+function onReset(){
+  jsonOutEl.textContent = '';
+  tokenOutEl.value = '';
+  tsEl.value = '';
+  setMsg('');
+}
+
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); setMsg('Đã copy vào clipboard.', true); }
+  catch { setMsg('Không copy được vào clipboard. Hãy copy thủ công.', false); }
+}
+
+/* events */
+$('#btnGen').addEventListener('click', onGenerate);
+$('#btnReset').addEventListener('click', onReset);
+$('#copyJson').addEventListener('click', () => copyText(jsonOutEl.textContent.trim()));
+$('#copyToken').addEventListener('click', () => copyText(tokenOutEl.value.trim()));
+
+/* Example placeholder (optional) */
+// pubPemEl.value = `-----BEGIN PUBLIC KEY-----\n...your P-256 SPKI public key...\n-----END PUBLIC KEY-----`;
+</script>
+</body>
+</html>
