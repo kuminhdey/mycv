@@ -1,1 +1,510 @@
-'use strict';const _0x328c29=_0x18b4;(function(_0xe8f480,_0x54b460){const _0xb700cc=_0x18b4,_0xd9b732=_0xe8f480();while(!![]){try{const _0x115e06=parseInt(_0xb700cc(0x171))/0x1*(-parseInt(_0xb700cc(0x14f))/0x2)+parseInt(_0xb700cc(0x195))/0x3+parseInt(_0xb700cc(0x1cd))/0x4*(parseInt(_0xb700cc(0x18a))/0x5)+parseInt(_0xb700cc(0x1e6))/0x6+-parseInt(_0xb700cc(0x19b))/0x7*(parseInt(_0xb700cc(0x1e9))/0x8)+parseInt(_0xb700cc(0x179))/0x9+-parseInt(_0xb700cc(0x164))/0xa*(parseInt(_0xb700cc(0x19d))/0xb);if(_0x115e06===_0x54b460)break;else _0xd9b732['push'](_0xd9b732['shift']());}catch(_0x4675de){_0xd9b732['push'](_0xd9b732['shift']());}}}(_0x33aa,0xb823c));const ACCESS={'TTL_MS':0xea60,'PRIVATE_KEY_PEM':'-----BEGIN\x20EC\x20PRIVATE\x20KEY-----\x0aMHcCAQEEIEgJFaFBqdftZlPV9i35xiaLDXNjQ9ty3RSPBtZzBCcfoAoGCCqGSM49\x0aAwEHoUQDQgAESrM8zwj/ZCRdoO7ilyhYIiv3npJB0ekBk3qhcphSojfc9sbUs5Px\x0aKBhMizvvmq81fqWJ7JeBGUn8o81y6DGuzQ==\x0a-----END\x20EC\x20PRIVATE\x20KEY-----'},_enc=new TextEncoder(),_dec=new TextDecoder();function _b64ToStr(_0x40045e){const _0x2bd14d=_0x18b4,_0x133134=atob(_0x40045e),_0x40421b=new Uint8Array(_0x133134[_0x2bd14d(0x15f)]);for(let _0x199d39=0x0;_0x199d39<_0x133134[_0x2bd14d(0x15f)];_0x199d39++)_0x40421b[_0x199d39]=_0x133134[_0x2bd14d(0x1a6)](_0x199d39);return _dec[_0x2bd14d(0x1b8)](_0x40421b);}function _0x33aa(){const _0x49ecc3=['get','MODEL','https://generativelanguage.googleapis.com/v1beta/models/','application/json','from','color:#f97316;font-weight:700','max','Gemini\x20trả\x20về\x20rỗng','POST','replace','%c\x20','parse','text','innerText','candidates','split','AES-GCM','Gemini\x20','Donate\x20image\x20(data\x20URL):','now','44CWiyGe','data:image/png;base64,','change','set','\x20—\x20','Chỉ\x20được\x20trả\x20về\x20JSON:\x20{\x22indices\x22:[<0-based\x20ints>],\x20\x22reason\x22:\x22<ngắn\x20gọn>\x22}\x20—\x20không\x20thêm\x20chữ\x20nào\x20khác.','button','color:#9333ea;font-weight:700','parts','🙏\x20If\x20this\x20helped,\x20consider\x20a\x20coffee!','add','%c⏭\x20Câu\x20hỏi\x20mới\x20đã\x20tải','MAX_RETRIES','color:#10b981;font-weight:700','querySelectorAll','background:url(data:image/png;base64,','gemini-2.0-flash','test','click','Nhập\x20GEMINI\x20API\x20key\x20(tạo\x20tại\x20https://aistudio.google.com/app/apikey):','dispatchEvent','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','checked','isFinite','input[type=\x22radio\x22]','6807294cqqVBt','warn','Access\x20bị\x20từ\x20chối\x20(token\x20rỗng).','8nKwmHD','Yêu\x20cầu:\x20Chỉ\x20trả\x20về\x20JSON\x20đúng\x20chuẩn:\x20{\x22index\x22:\x20<int>,\x20\x22reason\x22:\x20\x22<ngắn\x20gọn>\x22}.','random','Private\x20key\x20PEM\x20không\x20hợp\x20lệ\x20(cần\x20EC\x20PRIVATE\x20KEY\x20hoặc\x20PRIVATE\x20KEY).','pkcs8','color:#16a34a;font-weight:700','push','Không\x20có\x20API\x20key\x20→\x20dừng.','reason','-----BEGIN\x20EC\x20PRIVATE\x20KEY-----','ecies-p256-timestamp','%c✔\x20Radio:','json','retry-after','398dTXyfc','epk','map','isNaN','querySelector','expired','isInteger','-----END\x20PRIVATE\x20KEY-----','next','decrypt','[access]\x20token\x20invalid/expired\x20→\x20yêu\x20cầu\x20nhập\x20lại:','match','floor','PRIVATE_KEY_PEM','-----END\x20EC\x20PRIVATE\x20KEY-----','optionLabels','length','message','index','-----BEGIN\x20PRIVATE\x20KEY-----','Dán\x20Access\x20Token\x20(Base64\x20của\x20JSON\x20ECIES):','190eGJKvT','__QUIZBOT_API_KEY','nextButtonFinder','subtle','deriveKey','number','LOAD_TIMEOUT_MS','deriveBits','BASE_BACKOFF_MS','Các\x20lựa\x20chọn\x20(0-based):','input','Gemini\x20request\x20failed\x20(attempt\x20','indices','2933hLsNol','getAttribute','ECDH','salt','BEGIN\x20PRIVATE\x20KEY','undefined','system','QuizBot','12877209bAMNZJ','Model\x20trả\x20về\x20index\x20không\x20hợp\x20lệ\x20(radio)','%c✔\x20Checkbox:','Yêu\x20cầu:\x20Chỉ\x20trả\x20về\x20JSON\x20{\x22indices\x22:[...],\x20\x22reason\x22:\x22...\x22}\x20(0-based).','textContent','multi','background-size:','importKey',')\x20no-repeat','px\x20','padding:','P-256','user','filter','join','Model\x20không\x20trả\x20về\x20indices\x20hợp\x20lệ\x20cho\x20checkbox','DELAY_BEFORE_NEXT','325575UuxNBn','[Gemini]\x20thất\x20bại\x20sau\x20max\x20retries.\x20Thử\x20nhập\x20API\x20key\x20mới...','log','toLowerCase','margin:8px\x200','catch','font-size:1px','statusText','radio','status','encode','2141115baATIh','raw','__QUIZBOT_TOKEN_B64','Bạn\x20là\x20trợ\x20lý\x20làm\x20trắc\x20nghiệm.\x20CÓ\x20THỂ\x20có\x20NHIỀU\x20đáp\x20án\x20đúng.\x20','trim','Chỉ\x20được\x20trả\x20về\x20JSON:\x20{\x22index\x22:\x20<0-based\x20int>,\x20\x22reason\x22:\x20\x22<ngắn\x20gọn>\x22}\x20—\x20không\x20kèm\x20chữ\x20nào\x20khác.','3186022reZQtY','ul.list-block\x20li\x20label','1274999eBcbxg','div.custom-test-case-checkbox','closest','includes','color:#2563eb;font-weight:700','Câu\x20hỏi:\x20','iframe[data-name=\x22iframe-lesson-player\x22]','color:#16a34a;font-weight:700;font-size:14px','assign','charCodeAt','HKDF','question','POLL_INTERVAL_MS','contentWindow','label','%c🏁\x20Hoàn\x20tất\x20vòng\x20lặp.','unshift','isArray','span','has','Không\x20có\x20API\x20key.','TTL_MS','apiKey','selectors','content','%c➡️\x20\x20Next','p.para-big.disable-select,\x20p.para-big,\x20.para-big.disable-select','decode'];_0x33aa=function(){return _0x49ecc3;};return _0x33aa();}function _b64uToU8(_0x56e74a){const _0x286753=_0x18b4;_0x56e74a=_0x56e74a[_0x286753(0x1c2)](/-/g,'+')['replace'](/_/g,'/');while(_0x56e74a['length']%0x4)_0x56e74a+='=';const _0x702a9b=atob(_0x56e74a);return Uint8Array[_0x286753(0x1bd)]([..._0x702a9b][_0x286753(0x151)](_0x452486=>_0x452486[_0x286753(0x1a6)](0x0)));}function _strip(_0x15e3d2,_0x1e7630,_0x2af3ee){const _0x12feba=_0x18b4;return _0x15e3d2[_0x12feba(0x1c2)](_0x1e7630,'')[_0x12feba(0x1c2)](_0x2af3ee,'')['replace'](/\s+/g,'');}function _0x18b4(_0x3b6756,_0x3f20c5){const _0x33aa72=_0x33aa();return _0x18b4=function(_0x18b464,_0x117b4d){_0x18b464=_0x18b464-0x143;let _0x35cfdc=_0x33aa72[_0x18b464];return _0x35cfdc;},_0x18b4(_0x3b6756,_0x3f20c5);}function _pemBlockToU8(_0x73bf4a,_0x17ed94,_0xc6748d){const _0x5878c8=_0x18b4,_0x34a819=_strip(_0x73bf4a[_0x5878c8(0x199)](),_0x17ed94,_0xc6748d),_0x579178=atob(_0x34a819);return Uint8Array[_0x5878c8(0x1bd)]([..._0x579178][_0x5878c8(0x151)](_0x13d963=>_0x13d963[_0x5878c8(0x1a6)](0x0)));}function _encLen(_0x2de7d4){const _0x1c490=_0x18b4;if(_0x2de7d4<0x80)return Uint8Array['from']([_0x2de7d4]);const _0x5c8517=[];while(_0x2de7d4>0x0){_0x5c8517[_0x1c490(0x1ad)](_0x2de7d4&0xff),_0x2de7d4>>=0x8;}return Uint8Array['from']([0x80|_0x5c8517[_0x1c490(0x15f)],..._0x5c8517]);}function _asn1(_0x326759,_0x379b42){const _0xcb927b=_0x18b4,_0x5b95de=_encLen(_0x379b42[_0xcb927b(0x15f)]),_0x4f6cf2=new Uint8Array(0x1+_0x5b95de[_0xcb927b(0x15f)]+_0x379b42['length']);return _0x4f6cf2[0x0]=_0x326759,_0x4f6cf2['set'](_0x5b95de,0x1),_0x4f6cf2[_0xcb927b(0x1d0)](_0x379b42,0x1+_0x5b95de['length']),_0x4f6cf2;}const _seq=_0x15fc74=>_asn1(0x30,_0x15fc74),_oct=_0x36b0e5=>_asn1(0x4,_0x36b0e5);function _sec1ToPkcs8(_0x932adf){const _0x286ada=_0x18b4,_0x4e9468=Uint8Array['from']([0x2,0x1,0x0]),_0x2f8a03=(..._0xa72cdb)=>Uint8Array[_0x286ada(0x1bd)]([0x6,_0xa72cdb[_0x286ada(0x15f)],..._0xa72cdb]),_0x54fcb5=_0x2f8a03(0x2a,0x86,0x48,0xce,0x3d,0x2,0x1),_0x57d7cc=_0x2f8a03(0x2a,0x86,0x48,0xce,0x3d,0x3,0x1,0x7),_0x4ce1db=_seq(new Uint8Array([..._0x54fcb5,..._0x57d7cc]));return _seq(new Uint8Array([..._0x4e9468,..._0x4ce1db,..._oct(_0x932adf)]));}async function _importPrivateKeyEC(_0x3d4fb8){const _0x5aa510=_0x18b4;let _0x368664,_0x59c622='pkcs8';if(_0x3d4fb8['includes']('BEGIN\x20EC\x20PRIVATE\x20KEY')){const _0x522e5d=_pemBlockToU8(_0x3d4fb8,_0x5aa510(0x14a),_0x5aa510(0x15d));_0x368664=_sec1ToPkcs8(_0x522e5d);}else{if(_0x3d4fb8[_0x5aa510(0x1a0)](_0x5aa510(0x175)))_0x368664=_pemBlockToU8(_0x3d4fb8,_0x5aa510(0x162),_0x5aa510(0x156));else throw new Error(_0x5aa510(0x144));}return crypto[_0x5aa510(0x167)][_0x5aa510(0x180)](_0x5aa510(0x145),_0x368664['buffer'],{'name':_0x5aa510(0x173),'namedCurve':'P-256'},![],[_0x5aa510(0x168),_0x5aa510(0x16b)]);}async function _decryptTokenB64ToTimestampMs(_0x44bef0){const _0x3171ef=_0x18b4,_0x5ab5c2=_b64ToStr(String(_0x44bef0||'')),_0x84aa0e=JSON[_0x3171ef(0x1c4)](_0x5ab5c2);if(!_0x84aa0e||_0x84aa0e['v']!==0x1)throw new Error('Token\x20không\x20hợp\x20lệ');const _0x4dff10=await _importPrivateKeyEC(ACCESS[_0x3171ef(0x15c)]),_0x235554=await crypto[_0x3171ef(0x167)][_0x3171ef(0x180)](_0x3171ef(0x196),_b64uToU8(_0x84aa0e[_0x3171ef(0x150)]),{'name':_0x3171ef(0x173),'namedCurve':_0x3171ef(0x184)},![],[]),_0x573177=await crypto[_0x3171ef(0x167)][_0x3171ef(0x16b)]({'name':_0x3171ef(0x173),'public':_0x235554},_0x4dff10,0x100),_0x135248=await crypto[_0x3171ef(0x167)][_0x3171ef(0x180)](_0x3171ef(0x196),_0x573177,_0x3171ef(0x1a7),![],[_0x3171ef(0x168)]),_0x4c8b4e=await crypto[_0x3171ef(0x167)][_0x3171ef(0x168)]({'name':_0x3171ef(0x1a7),'hash':'SHA-256','salt':_b64uToU8(_0x84aa0e[_0x3171ef(0x174)]),'info':_enc[_0x3171ef(0x194)](_0x3171ef(0x14b))},_0x135248,{'name':_0x3171ef(0x1c9),'length':0x100},![],[_0x3171ef(0x158)]),_0x539e67=await crypto[_0x3171ef(0x167)][_0x3171ef(0x158)]({'name':_0x3171ef(0x1c9),'iv':_b64uToU8(_0x84aa0e['iv'])},_0x4c8b4e,_b64uToU8(_0x84aa0e['ct'])),_0x1fb7f5=new TextDecoder()[_0x3171ef(0x1b8)](new Uint8Array(_0x539e67));if(!/^\d{10,}$/[_0x3171ef(0x1de)](_0x1fb7f5))throw new Error('Timestamp\x20không\x20hợp\x20lệ');return Number(_0x1fb7f5);}async function _ensureAccessGranted(){const _0x1b9ea4=_0x18b4;let _0x50b73e=(window['__QUIZBOT_TOKEN_B64']||'')[_0x1b9ea4(0x199)]();while(!![]){if(!_0x50b73e){_0x50b73e=prompt(_0x1b9ea4(0x163),'')||'',_0x50b73e=_0x50b73e[_0x1b9ea4(0x199)]();if(!_0x50b73e)throw new Error('Thiếu\x20Access\x20Token');}try{const _0x22f1fb=await _decryptTokenB64ToTimestampMs(_0x50b73e),_0x550bd3=Math['abs'](Date[_0x1b9ea4(0x1cc)]()-_0x22f1fb);if(_0x550bd3>ACCESS[_0x1b9ea4(0x1b2)])throw new Error(_0x1b9ea4(0x154));return window[_0x1b9ea4(0x197)]=_0x50b73e,!![];}catch(_0x498b8e){console['warn'](_0x1b9ea4(0x159),_0x498b8e?.['message']||_0x498b8e),window[_0x1b9ea4(0x197)]='';const _0xaccf06=prompt('Access\x20Token\x20không\x20hợp\x20lệ\x20hoặc\x20đã\x20hết\x20hạn.\x0aVui\x20lòng\x20dán\x20token\x20mới\x20(hoặc\x20Cancel\x20để\x20dừng):','')||'';_0x50b73e=_0xaccf06[_0x1b9ea4(0x199)]();if(!_0x50b73e)throw new Error(_0x1b9ea4(0x1e8));}}}const CONFIG={'MODEL':_0x328c29(0x1dd),'DELAY_AFTER_SELECT':0x258,'DELAY_BEFORE_NEXT':0x190,'LOAD_TIMEOUT_MS':0x3a98,'POLL_INTERVAL_MS':0xfa,'MAX_RETRIES':0x5,'BASE_BACKOFF_MS':0x4b0,'BACKOFF_FACTOR':0x2},STATE={'apiKey':'','selectors':{'question':_0x328c29(0x1b7),'optionLabels':_0x328c29(0x19c),'nextButtonFinder':_0x31d1ef=>{const _0x1c5b82=_0x328c29,_0x1c5c19=[..._0x31d1ef['querySelectorAll'](_0x1c5b82(0x1d3))]['find'](_0x1c2223=>(_0x1c2223['getAttribute']('aria-label')||'')['toLowerCase']()['includes'](_0x1c5b82(0x157)));if(_0x1c5c19)return _0x1c5c19;const _0x44c1ab=[..._0x31d1ef[_0x1c5b82(0x1db)](_0x1c5b82(0x1d3))]['find'](_0x139b01=>(_0x139b01[_0x1c5b82(0x17d)]||'')['trim']()[_0x1c5b82(0x18d)]()[_0x1c5b82(0x15a)](/\b(next|tiếp|câu tiếp|next question)\b/));return _0x44c1ab||null;},'getRoot':()=>{const _0x3da716=_0x328c29,_0x14b7c9=document[_0x3da716(0x153)](_0x3da716(0x1a3));return _0x14b7c9?.['contentDocument']||_0x14b7c9?.[_0x3da716(0x1aa)]?.['document']||document;}}},_sleep=_0x5cf102=>new Promise(_0x238630=>setTimeout(_0x238630,_0x5cf102));async function _promptApiKey(){const _0x576c2c=_0x328c29,_0x91cf20=_0x576c2c(0x1e0),_0x2d988a=prompt(_0x91cf20,window[_0x576c2c(0x165)]||'')||'',_0x16113e=_0x2d988a[_0x576c2c(0x199)]();return _0x16113e||null;}async function _geminiGenerateContentOnce({system:_0x20688c,user:_0x22b0e7,model:_0x28ad04,temperature:_0x461625}){const _0x3dc199=_0x328c29,_0x359c37=_0x3dc199(0x1bb)+encodeURIComponent(_0x28ad04)+':generateContent';let _0xd2570b=0x0,_0x514992;while(_0xd2570b<=CONFIG['MAX_RETRIES']){try{const _0x5ee702=await fetch(_0x359c37+'?key='+encodeURIComponent(STATE['apiKey']),{'method':_0x3dc199(0x1c1),'headers':{'Content-Type':_0x3dc199(0x1bc)},'body':JSON['stringify']({'systemInstruction':_0x20688c?{'role':_0x3dc199(0x177),'parts':[{'text':_0x20688c}]}:undefined,'contents':[{'role':_0x3dc199(0x185),'parts':[{'text':_0x22b0e7}]}],'generationConfig':{'temperature':_0x461625}})});if(_0x5ee702[_0x3dc199(0x193)]===0x1ad||_0x5ee702['status']>=0x1f4&&_0x5ee702[_0x3dc199(0x193)]<0x258){const _0x343d85=_0x5ee702['headers'][_0x3dc199(0x1b9)](_0x3dc199(0x14e));let _0x5d0bb6=_0x343d85?Number(_0x343d85)*0x3e8:null;if(!_0x5d0bb6||Number[_0x3dc199(0x152)](_0x5d0bb6)){const _0x1489bc=Math['floor'](Math[_0x3dc199(0x143)]()*0x190);_0x5d0bb6=CONFIG[_0x3dc199(0x16c)]*Math['pow'](CONFIG['BACKOFF_FACTOR'],_0xd2570b)+_0x1489bc;}console[_0x3dc199(0x1e7)](_0x3dc199(0x1ca)+_0x5ee702['status']+'.\x20Retry\x20#'+(_0xd2570b+0x1)+'\x20in\x20'+_0x5d0bb6+'ms'),await _sleep(_0x5d0bb6),_0xd2570b++;continue;}if(!_0x5ee702['ok']){const _0x520c53=await _0x5ee702['text']()[_0x3dc199(0x18f)](()=>'');throw new Error(_0x3dc199(0x1ca)+_0x5ee702[_0x3dc199(0x193)]+'\x20'+_0x5ee702[_0x3dc199(0x191)]+_0x3dc199(0x1d1)+_0x520c53);}const _0x1e87bc=await _0x5ee702[_0x3dc199(0x14d)](),_0x4fa03f=_0x1e87bc?.[_0x3dc199(0x1c7)]?.[0x0]?.[_0x3dc199(0x1b5)]?.['parts']?.[_0x3dc199(0x151)](_0x1cfe29=>_0x1cfe29[_0x3dc199(0x1c5)])[_0x3dc199(0x187)]('')?.[_0x3dc199(0x199)]()||_0x1e87bc?.[_0x3dc199(0x1c7)]?.[0x0]?.[_0x3dc199(0x1b5)]?.[_0x3dc199(0x1d5)]?.[0x0]?.[_0x3dc199(0x1c5)]?.['trim']()||'';if(!_0x4fa03f)throw new Error(_0x3dc199(0x1c0));return _0x4fa03f;}catch(_0x109433){_0x514992=_0x109433;const _0x435736=Math[_0x3dc199(0x15b)](Math[_0x3dc199(0x143)]()*0x190),_0x5bfb6f=CONFIG['BASE_BACKOFF_MS']*Math['pow'](CONFIG['BACKOFF_FACTOR'],_0xd2570b)+_0x435736;console[_0x3dc199(0x1e7)](_0x3dc199(0x16f)+(_0xd2570b+0x1)+'/'+(CONFIG[_0x3dc199(0x1d9)]+0x1)+'):\x20'+(_0x109433?.[_0x3dc199(0x160)]||_0x109433)+'.\x20Retry\x20in\x20'+_0x5bfb6f+'ms'),await _sleep(_0x5bfb6f),_0xd2570b++;}}throw _0x514992||new Error('Gemini\x20request\x20failed\x20after\x20retries');}async function _geminiGenerateContent({system:_0x3713da,user:_0x2296d3,model:model=CONFIG[_0x328c29(0x1ba)],temperature:temperature=0x0}){const _0x120d30=_0x328c29;!STATE[_0x120d30(0x1b3)]&&(STATE[_0x120d30(0x1b3)]=(window[_0x120d30(0x165)]||'')[_0x120d30(0x199)]());if(!STATE[_0x120d30(0x1b3)]){const _0x5a086c=await _promptApiKey();if(!_0x5a086c)throw new Error(_0x120d30(0x1b1));STATE[_0x120d30(0x1b3)]=_0x5a086c,window[_0x120d30(0x165)]=_0x5a086c;}try{return await _geminiGenerateContentOnce({'system':_0x3713da,'user':_0x2296d3,'model':model,'temperature':temperature});}catch(_0x260c9b){console['warn'](_0x120d30(0x18b),_0x260c9b?.[_0x120d30(0x160)]||_0x260c9b);const _0x4b44d8=await _promptApiKey();if(!_0x4b44d8)throw _0x260c9b;return STATE['apiKey']=_0x4b44d8,window['__QUIZBOT_API_KEY']=_0x4b44d8,await _geminiGenerateContentOnce({'system':_0x3713da,'user':_0x2296d3,'model':model,'temperature':temperature});}}function _getRoot(){return STATE['selectors']['getRoot']();}function _extractRadioOptions(_0x1a992d){const _0x55acc7=_0x328c29,_0x4a95ec=[..._0x1a992d[_0x55acc7(0x1db)](STATE['selectors'][_0x55acc7(0x15e)])];if(!_0x4a95ec[_0x55acc7(0x15f)])return null;return _0x4a95ec[_0x55acc7(0x151)](_0x286b6f=>{const _0x6e9f3a=_0x55acc7,_0x2b3c72=_0x286b6f[_0x6e9f3a(0x19f)]('li'),_0x168855=_0x2b3c72?.['querySelector'](_0x6e9f3a(0x1e5)),_0x2f8129=(_0x286b6f[_0x6e9f3a(0x1c6)]||_0x2b3c72?.[_0x6e9f3a(0x1c6)]||'')[_0x6e9f3a(0x199)]();return{'li':_0x2b3c72,'radio':_0x168855,'label':_0x286b6f,'text':_0x2f8129};});}function _extractCheckboxOptions(_0x1c1d94){const _0x389697=_0x328c29,_0x32c01b=[..._0x1c1d94[_0x389697(0x1db)]('ul.list-block\x20li\x20input[type=\x22checkbox\x22]')];if(!_0x32c01b['length'])return null;return _0x32c01b[_0x389697(0x151)](_0x4f3457=>{const _0x3eafab=_0x389697;let _0x9473b9=_0x4f3457[_0x3eafab(0x19f)](_0x3eafab(0x19e))?.['querySelector'](_0x3eafab(0x1af))?.[_0x3eafab(0x1c6)]?.[_0x3eafab(0x199)]()||_0x4f3457[_0x3eafab(0x172)]('aria-label')||_0x4f3457[_0x3eafab(0x19f)]('li')?.[_0x3eafab(0x1c6)]?.[_0x3eafab(0x199)]()||'';return _0x9473b9=_0x9473b9['replace'](/^.*?:\s*/,'')[_0x3eafab(0x1c2)](/\(see .*$/i,'')[_0x3eafab(0x199)](),{'input':_0x4f3457,'text':_0x9473b9};});}function _parseIndicesArray(_0x3ab8ad,_0x1d8591){const _0x16cfa3=_0x328c29;let _0x5e7283=[];try{const _0x53ec63=JSON[_0x16cfa3(0x1c4)](_0x3ab8ad);if(Array[_0x16cfa3(0x1ae)](_0x53ec63))_0x5e7283=_0x53ec63;else{if(Array[_0x16cfa3(0x1ae)](_0x53ec63[_0x16cfa3(0x170)]))_0x5e7283=_0x53ec63['indices'];else{if(typeof _0x53ec63[_0x16cfa3(0x161)]===_0x16cfa3(0x169))_0x5e7283=[_0x53ec63['index']];}}}catch(_0x13a770){const _0xc4e80f=_0x3ab8ad[_0x16cfa3(0x15a)](/"indices"\s*:\s*\[([^\]]*)\]/i);_0xc4e80f&&_0xc4e80f[0x1]?_0x5e7283=_0xc4e80f[0x1][_0x16cfa3(0x1c8)](/[, ]+/)[_0x16cfa3(0x151)](_0x3f227f=>Number(_0x3f227f))[_0x16cfa3(0x186)](_0x13eecd=>Number[_0x16cfa3(0x1e4)](_0x13eecd)):_0x5e7283=(_0x3ab8ad[_0x16cfa3(0x15a)](/\d+/g)||[])[_0x16cfa3(0x151)](Number)['filter'](Number[_0x16cfa3(0x1e4)]);}const _0x284f1c=new Set(),_0x583b27=[];for(const _0x92584c of _0x5e7283){const _0x3aafea=Math['trunc'](_0x92584c);if(!Number[_0x16cfa3(0x155)](_0x3aafea))continue;if(_0x3aafea<0x0||_0x3aafea>=_0x1d8591)continue;!_0x284f1c[_0x16cfa3(0x1b0)](_0x3aafea)&&(_0x284f1c[_0x16cfa3(0x1d7)](_0x3aafea),_0x583b27[_0x16cfa3(0x147)](_0x3aafea));}return _0x583b27;}async function _answerOne(_0x3da67c=_getRoot()){const _0x24c162=_0x328c29,_0x3af400=_0x3da67c['querySelector'](STATE[_0x24c162(0x1b4)][_0x24c162(0x1a8)]),_0xc2efa2=(_0x3af400?.[_0x24c162(0x1c6)]||'')[_0x24c162(0x199)](),_0x38fcb6=_extractCheckboxOptions(_0x3da67c);if(_0x38fcb6?.[_0x24c162(0x15f)]){const _0x2c9b6d=_0x38fcb6['map'](_0x5e1f11=>_0x5e1f11[_0x24c162(0x1c5)]),_0x439e26=_0x24c162(0x198)+_0x24c162(0x1d2),_0x54f71b=[_0x24c162(0x1a2)+_0xc2efa2,_0x24c162(0x16d),..._0x2c9b6d[_0x24c162(0x151)]((_0x500a2d,_0x2191b6)=>'\x20\x20'+_0x2191b6+'.\x20'+_0x500a2d),_0x24c162(0x17c)]['join']('\x0a'),_0x5d8a6c=await _geminiGenerateContent({'system':_0x439e26,'user':_0x54f71b,'temperature':0x0}),_0xeef7bf=_parseIndicesArray(_0x5d8a6c,_0x2c9b6d[_0x24c162(0x15f)]);if(!_0xeef7bf[_0x24c162(0x15f)])throw new Error(_0x24c162(0x188));for(const _0xe8f5d7 of _0xeef7bf){const _0x4f3a6a=_0x38fcb6[_0xe8f5d7];if(!_0x4f3a6a?.[_0x24c162(0x16e)])continue;!_0x4f3a6a[_0x24c162(0x16e)][_0x24c162(0x1e3)]&&(_0x4f3a6a[_0x24c162(0x16e)]['click'](),_0x4f3a6a[_0x24c162(0x16e)][_0x24c162(0x1e1)](new Event(_0x24c162(0x1cf),{'bubbles':!![]})),_0x4f3a6a[_0x24c162(0x16e)][_0x24c162(0x1e1)](new Event(_0x24c162(0x16e),{'bubbles':!![]}))),await _sleep(0x3c);}console[_0x24c162(0x18c)](_0x24c162(0x17b),_0x24c162(0x146),_0xeef7bf,_0xeef7bf[_0x24c162(0x151)](_0xef432=>_0x2c9b6d[_0xef432]));let _0x593fec='';try{_0x593fec=JSON['parse'](_0x5d8a6c)?.[_0x24c162(0x149)]||'';}catch{}return{'type':_0x24c162(0x17e),'question':_0xc2efa2,'options':_0x2c9b6d,'indices':_0xeef7bf,'reason':_0x593fec};}const _0x5cb421=_extractRadioOptions(_0x3da67c);if(!_0x5cb421?.[_0x24c162(0x15f)])throw new Error('Không\x20tìm\x20thấy\x20lựa\x20chọn\x20(checkbox/radio).');const _0x2e6956=_0x5cb421[_0x24c162(0x151)](_0x4ef213=>_0x4ef213['text']),_0x50b4fc='Bạn\x20là\x20trợ\x20lý\x20làm\x20trắc\x20nghiệm.\x20Chỉ\x20chọn\x201\x20đáp\x20án\x20đúng\x20nhất.\x20'+_0x24c162(0x19a),_0x3e550c=[_0x24c162(0x1a2)+_0xc2efa2,_0x24c162(0x16d),..._0x2e6956[_0x24c162(0x151)]((_0x58a124,_0x11be9e)=>'\x20\x20'+_0x11be9e+'.\x20'+_0x58a124),_0x24c162(0x1ea)][_0x24c162(0x187)]('\x0a'),_0x142a52=await _geminiGenerateContent({'system':_0x50b4fc,'user':_0x3e550c,'temperature':0x0});let _0xbfd20a=-0x1,_0x51b737='';try{const _0x304ebc=JSON[_0x24c162(0x1c4)](_0x142a52);_0xbfd20a=Number(_0x304ebc[_0x24c162(0x161)]),_0x51b737=String(_0x304ebc[_0x24c162(0x149)]||'');}catch{const _0x3fd5de=_0x142a52['match'](/"index"\s*:\s*(\d+)/)||_0x142a52[_0x24c162(0x15a)](/\b(\d+)\b/);if(_0x3fd5de)_0xbfd20a=Number(_0x3fd5de[0x1]);}if(!Number[_0x24c162(0x155)](_0xbfd20a)||_0xbfd20a<0x0||_0xbfd20a>=_0x2e6956[_0x24c162(0x15f)])throw new Error(_0x24c162(0x17a));const _0x3c190a=_0x5cb421[_0xbfd20a];if(_0x3c190a?.[_0x24c162(0x1ab)])_0x3c190a['label'][_0x24c162(0x1df)]();else{if(_0x3c190a?.['radio'])_0x3c190a[_0x24c162(0x192)]['checked']=!![],_0x3c190a['radio'][_0x24c162(0x1e1)](new Event('change',{'bubbles':!![]})),_0x3c190a[_0x24c162(0x192)][_0x24c162(0x1e1)](new Event(_0x24c162(0x16e),{'bubbles':!![]})),_0x3c190a['radio'][_0x24c162(0x1df)]();else _0x3c190a?.['li']&&_0x3c190a['li'][_0x24c162(0x1df)]();}console[_0x24c162(0x18c)](_0x24c162(0x14c),_0x24c162(0x146),_0xbfd20a,_0x2e6956[_0xbfd20a]);if(_0x51b737)console[_0x24c162(0x18c)]('Lý\x20do:',_0x51b737);return{'type':'single','question':_0xc2efa2,'options':_0x2e6956,'index':_0xbfd20a,'reason':_0x51b737};}async function _clickNext(_0x1b3702=_getRoot()){const _0xc59ab2=_0x328c29;await _sleep(CONFIG['DELAY_AFTER_SELECT']);const _0x5e75e9=STATE[_0xc59ab2(0x1b4)][_0xc59ab2(0x166)](_0x1b3702);if(!_0x5e75e9)return console[_0xc59ab2(0x1e7)]('Không\x20tìm\x20thấy\x20nút\x20Next.'),![];return await _sleep(CONFIG[_0xc59ab2(0x189)]),_0x5e75e9[_0xc59ab2(0x1df)](),console[_0xc59ab2(0x18c)](_0xc59ab2(0x1b6),_0xc59ab2(0x1a1)),!![];}async function _waitForNextQuestion(_0x62a2cf,_0x40a236=_getRoot()){const _0x56f5b0=_0x328c29,_0x5bd8d9=Date[_0x56f5b0(0x1cc)]();while(Date[_0x56f5b0(0x1cc)]()-_0x5bd8d9<CONFIG[_0x56f5b0(0x16a)]){await _sleep(CONFIG[_0x56f5b0(0x1a9)]);const _0x3e3ee9=_0x40a236[_0x56f5b0(0x153)](STATE[_0x56f5b0(0x1b4)][_0x56f5b0(0x1a8)]),_0x4ebccc=_0x3e3ee9?.[_0x56f5b0(0x1c6)]?.[_0x56f5b0(0x199)]();if(_0x4ebccc&&_0x4ebccc!==_0x62a2cf)return await _sleep(0x96),_0x4ebccc;}throw new Error('Hết\x20thời\x20gian\x20chờ\x20câu\x20hỏi\x20mới');}const DONATE_IMG_B64=_0x328c29(0x1e2);function printConsoleImageFromBase64(_0x4d4e57,{width:width=0x100,height:height=0x100,title:title=_0x328c29(0x1d6)}={}){const _0x1c72aa=_0x328c29;try{const _0x429d05=[_0x1c72aa(0x190),_0x1c72aa(0x183)+Math[_0x1c72aa(0x15b)](height/0x2)+_0x1c72aa(0x182)+Math['floor'](width/0x2)+'px',_0x1c72aa(0x1dc)+_0x4d4e57+_0x1c72aa(0x181),_0x1c72aa(0x17f)+width+'px\x20'+height+'px','line-height:0',_0x1c72aa(0x18e),'border-radius:8px']['join'](';');console[_0x1c72aa(0x18c)](_0x1c72aa(0x1c3),_0x429d05);}catch{console[_0x1c72aa(0x18c)](_0x1c72aa(0x1cb),_0x1c72aa(0x1ce)+_0x4d4e57);}if(title)console[_0x1c72aa(0x18c)]('%c'+title,_0x1c72aa(0x1a4));}export async function runQuiz(_0x46e828={}){const _0x1ebdd1=_0x328c29,{apiKey:_0x26c852,maxQuestions:maxQuestions=Infinity}=_0x46e828;await _ensureAccessGranted();if(_0x26c852)STATE[_0x1ebdd1(0x1b3)]=String(_0x26c852)[_0x1ebdd1(0x199)](),window[_0x1ebdd1(0x165)]=STATE[_0x1ebdd1(0x1b3)];else{if(!STATE[_0x1ebdd1(0x1b3)]){STATE[_0x1ebdd1(0x1b3)]=(window[_0x1ebdd1(0x165)]||'')['trim']();if(!STATE[_0x1ebdd1(0x1b3)]){const _0x424640=await _promptApiKey();if(!_0x424640)throw new Error(_0x1ebdd1(0x148));STATE[_0x1ebdd1(0x1b3)]=_0x424640,window['__QUIZBOT_API_KEY']=_0x424640;}}}let _0x414422=0x0;const _0x476505=[];while(_0x414422<maxQuestions){const _0x3e2d45=_getRoot(),_0x203f6d=_0x3e2d45[_0x1ebdd1(0x153)](STATE[_0x1ebdd1(0x1b4)][_0x1ebdd1(0x1a8)]),_0x4103f7=_0x203f6d?.[_0x1ebdd1(0x1c6)]?.[_0x1ebdd1(0x199)]()??'',_0x5ce8a8=await _answerOne(_0x3e2d45);_0x476505['push'](_0x5ce8a8);const _0x2c6396=await _clickNext(_0x3e2d45);if(!_0x2c6396){console['log']('%c⏹\x20Dừng:\x20không\x20có\x20nút\x20Next.',_0x1ebdd1(0x1be));break;}try{await _waitForNextQuestion(_0x4103f7,_0x3e2d45),console[_0x1ebdd1(0x18c)](_0x1ebdd1(0x1d8),_0x1ebdd1(0x1da));}catch(_0xdf6a25){console['warn']('⚠\x20Có\x20thể\x20là\x20câu\x20cuối.',_0xdf6a25?.[_0x1ebdd1(0x160)]||_0xdf6a25);break;}_0x414422++;}return console[_0x1ebdd1(0x18c)](_0x1ebdd1(0x1ac),_0x1ebdd1(0x1d4)),printConsoleImageFromBase64(DONATE_IMG_B64,{'width':0x100,'height':0x100,'title':'🙏\x20Nếu\x20hữu\x20ích,\x20mời\x20mình\x20ly\x20cà\x20phê\x20nhé!'}),_0x476505;}export function setApiKey(_0x5d9ba6){const _0x45fd51=_0x328c29;STATE[_0x45fd51(0x1b3)]=String(_0x5d9ba6||'')[_0x45fd51(0x199)](),window[_0x45fd51(0x165)]=STATE[_0x45fd51(0x1b3)];}export function setTTL(_0x32a4f1){const _0xfee848=_0x328c29;ACCESS[_0xfee848(0x1b2)]=Math[_0xfee848(0x1bf)](0x0,Number(_0x32a4f1)||0x0);}export function setSelectors(_0xd45e8d){const _0x441414=_0x328c29;Object[_0x441414(0x1a5)](STATE[_0x441414(0x1b4)],_0xd45e8d||{});}export async function debugDecryptAccessTokenB64(_0x586cb5){return _decryptTokenB64ToTimestampMs(_0x586cb5);}typeof window!==_0x328c29(0x176)&&(window[_0x328c29(0x178)]={'runQuiz':runQuiz,'setApiKey':setApiKey,'setTTL':setTTL,'setSelectors':setSelectors,'debugDecryptAccessTokenB64':debugDecryptAccessTokenB64});
+// quizbot.js — ES Module for GitHub Pages
+// Usage (on the quiz page, in DevTools Console):
+//   await import('https://<username>.github.io/<repo>/quizbot.js')
+//     .then(m => m.runQuiz({ maxQuestions: 5 }))
+//
+// Access control: ECIES (P-256 ECDH + HKDF + AES-GCM)
+// - Publisher: encrypt timestamp_ms with PUBLIC KEY -> JSON {v,epk,iv,salt,ct} (b64url) -> Base64 whole JSON.
+// - Consumer (this file): PRIVATE KEY is embedded; user pastes Access Token (Base64), decrypt -> timestamp, check TTL <= 60s.
+//
+// After the quiz runs, this module prints an image in the console from a Base64 PNG (donation banner).
+
+'use strict';
+
+/* =========================
+ * 1) ACCESS via ECIES (P-256 ECDH + HKDF + AES-GCM)
+ * ========================= */
+const ACCESS = {
+  TTL_MS: 300_000, // token freshness window (60s)
+  // ⚠️ SECURITY: Private key is embedded for demo/testing only. Do not ship secrets in public repos.
+  PRIVATE_KEY_PEM: `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIEgJFaFBqdftZlPV9i35xiaLDXNjQ9ty3RSPBtZzBCcfoAoGCCqGSM49
+AwEHoUQDQgAESrM8zwj/ZCRdoO7ilyhYIiv3npJB0ekBk3qhcphSojfc9sbUs5Px
+KBhMizvvmq81fqWJ7JeBGUn8o81y6DGuzQ==
+-----END EC PRIVATE KEY-----`,
+};
+
+const _enc = new TextEncoder();
+const _dec = new TextDecoder();
+
+// Base64 (standard) -> string UTF-8
+function _b64ToStr(b64) {
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return _dec.decode(u8);
+}
+
+// Base64URL -> Uint8Array
+function _b64uToU8(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = atob(s);
+  return Uint8Array.from([...bin].map(c => c.charCodeAt(0)));
+}
+
+// ----- PEM helpers + SEC1 -> PKCS#8 -----
+function _strip(pem, begin, end) {
+  return pem.replace(begin, '').replace(end, '').replace(/\s+/g, '');
+}
+function _pemBlockToU8(pem, begin, end) {
+  const b64 = _strip(pem.trim(), begin, end);
+  const bin = atob(b64);
+  return Uint8Array.from([...bin].map(c => c.charCodeAt(0)));
+}
+function _encLen(n) {
+  if (n < 128) return Uint8Array.from([n]);
+  const bytes = [];
+  while (n > 0) { bytes.unshift(n & 0xff); n >>= 8; }
+  return Uint8Array.from([0x80 | bytes.length, ...bytes]);
+}
+function _asn1(tag, content) {
+  const len = _encLen(content.length);
+  const out = new Uint8Array(1 + len.length + content.length);
+  out[0] = tag; out.set(len, 1); out.set(content, 1 + len.length);
+  return out;
+}
+const _seq = (content) => _asn1(0x30, content);
+const _oct = (content) => _asn1(0x04, content);
+
+// SEC1 EC PRIVATE KEY -> PKCS#8 PrivateKeyInfo (prime256v1)
+function _sec1ToPkcs8(sec1U8) {
+  const int0 = Uint8Array.from([0x02, 0x01, 0x00]); // INTEGER 0
+  const oid = (...x) => Uint8Array.from([0x06, x.length, ...x]);
+  const idEcPublicKey = oid(0x2A,0x86,0x48,0xCE,0x3D,0x02,0x01);      // 1.2.840.10045.2.1
+  const prime256v1    = oid(0x2A,0x86,0x48,0xCE,0x3D,0x03,0x01,0x07); // 1.2.840.10045.3.1.7
+  const algId         = _seq(new Uint8Array([...idEcPublicKey, ...prime256v1]));
+  return _seq(new Uint8Array([...int0, ...algId, ..._oct(sec1U8)]));
+}
+
+async function _importPrivateKeyEC(pem) {
+  let keyData, fmt = 'pkcs8';
+  if (pem.includes('BEGIN EC PRIVATE KEY')) {
+    const sec1 = _pemBlockToU8(pem, '-----BEGIN EC PRIVATE KEY-----', '-----END EC PRIVATE KEY-----');
+    keyData = _sec1ToPkcs8(sec1);
+  } else if (pem.includes('BEGIN PRIVATE KEY')) {
+    keyData = _pemBlockToU8(pem, '-----BEGIN PRIVATE KEY-----', '-----END PRIVATE KEY-----');
+  } else {
+    throw new Error('Private key PEM không hợp lệ (cần EC PRIVATE KEY hoặc PRIVATE KEY).');
+  }
+  return crypto.subtle.importKey('pkcs8', keyData.buffer, { name:'ECDH', namedCurve:'P-256' }, false, ['deriveKey','deriveBits']);
+}
+
+/** Decrypt Access Token (Base64 of JSON {v,epk,iv,salt,ct}) -> timestamp (ms) */
+async function _decryptTokenB64ToTimestampMs(tokenB64) {
+  const json = _b64ToStr(String(tokenB64 || ''));
+  const t = JSON.parse(json);
+  if (!t || t.v !== 1) throw new Error('Token không hợp lệ');
+
+  const priv = await _importPrivateKeyEC(ACCESS.PRIVATE_KEY_PEM);
+  const ephPub = await crypto.subtle.importKey('raw', _b64uToU8(t.epk), { name:'ECDH', namedCurve:'P-256' }, false, []);
+
+  const shared = await crypto.subtle.deriveBits({ name:'ECDH', public: ephPub }, priv, 256);
+  const hkdfBase = await crypto.subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+  const aesKey = await crypto.subtle.deriveKey(
+    { name:'HKDF', hash:'SHA-256', salt: _b64uToU8(t.salt), info: _enc.encode('ecies-p256-timestamp') },
+    hkdfBase,
+    { name:'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+
+  const tsBuf = await crypto.subtle.decrypt({ name:'AES-GCM', iv: _b64uToU8(t.iv) }, aesKey, _b64uToU8(t.ct));
+  const tsStr = new TextDecoder().decode(new Uint8Array(tsBuf));
+  if (!/^\d{10,}$/.test(tsStr)) throw new Error('Timestamp không hợp lệ');
+  return Number(tsStr);
+}
+
+/** Cached access with prompt-once-then-reuse; re-prompt on invalid/expired */
+async function _ensureAccessGranted() {
+  let tokenB64 = (window.__QUIZBOT_TOKEN_B64 || '').trim();
+  while (true) {
+    // if not cached, ask user
+    if (!tokenB64) {
+      tokenB64 = prompt('Dán Access Token (Base64 của JSON ECIES):', '') || '';
+      tokenB64 = tokenB64.trim();
+      if (!tokenB64) throw new Error('Thiếu Access Token');
+    }
+
+    try {
+      const ts = await _decryptTokenB64ToTimestampMs(tokenB64);
+      const delta = Math.abs(Date.now() - ts);
+      if (delta > ACCESS.TTL_MS) throw new Error('expired');
+      // success: cache and return
+      window.__QUIZBOT_TOKEN_B64 = tokenB64;
+      return true;
+    } catch (e) {
+      console.warn('[access] token invalid/expired → yêu cầu nhập lại:', e?.message || e);
+      window.__QUIZBOT_TOKEN_B64 = '';
+      const again = prompt('Access Token không hợp lệ hoặc đã hết hạn.\nVui lòng dán token mới (hoặc Cancel để dừng):', '') || '';
+      tokenB64 = again.trim();
+      if (!tokenB64) throw new Error('Access bị từ chối (token rỗng).');
+    }
+  }
+}
+
+/* =========================
+ * 2) QUIZ CONFIG & STATE
+ * ========================= */
+const CONFIG = {
+  MODEL: 'gemini-2.0-flash',          // <<<<<< switched default model here
+  DELAY_AFTER_SELECT: 600,
+  DELAY_BEFORE_NEXT: 400,
+  LOAD_TIMEOUT_MS: 15000,
+  POLL_INTERVAL_MS: 250,
+  MAX_RETRIES: 5,
+  BASE_BACKOFF_MS: 1200,
+  BACKOFF_FACTOR: 2,
+};
+
+const STATE = {
+  apiKey: '',
+  selectors: {
+    question: 'p.para-big.disable-select, p.para-big, .para-big.disable-select',
+    optionLabels: 'ul.list-block li label', // for radio
+    nextButtonFinder: (root) => {
+      const byAria = [...root.querySelectorAll('button')]
+        .find(b => ((b.getAttribute('aria-label') || '').toLowerCase().includes('next')));
+      if (byAria) return byAria;
+      const byText = [...root.querySelectorAll('button')]
+        .find(b => (b.textContent || '').trim().toLowerCase().match(/\b(next|tiếp|câu tiếp|next question)\b/));
+      return byText || null;
+    },
+    getRoot: () => {
+      const iframe = document.querySelector('iframe[data-name="iframe-lesson-player"]');
+      return (iframe?.contentDocument || iframe?.contentWindow?.document || document);
+    },
+  },
+};
+
+const _sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+/* =========================
+ * 3) Gemini API call
+ * ========================= */
+async function _promptApiKey() {
+  const msg = 'Nhập GEMINI API key (tạo tại https://aistudio.google.com/app/apikey):';
+  const val = prompt(msg, (window.__QUIZBOT_API_KEY || '')) || '';
+  const key = val.trim();
+  return key || null;
+}
+
+async function _geminiGenerateContentOnce({ system, user, model, temperature }) {
+  const base = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  let attempt = 0, lastErr;
+
+  while (attempt <= CONFIG.MAX_RETRIES) {
+    try {
+      const resp = await fetch(`${base}?key=${encodeURIComponent(STATE.apiKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: system ? { role: 'system', parts: [{ text: system }] } : undefined,
+          contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: { temperature }
+        })
+      });
+
+      if (resp.status === 429 || (resp.status >= 500 && resp.status < 600)) {
+        const retryAfter = resp.headers.get('retry-after');
+        let waitMs = retryAfter ? Number(retryAfter) * 1000 : null;
+        if (!waitMs || Number.isNaN(waitMs)) {
+          const jitter = Math.floor(Math.random() * 400);
+          waitMs = CONFIG.BASE_BACKOFF_MS * Math.pow(CONFIG.BACKOFF_FACTOR, attempt) + jitter;
+        }
+        console.warn(`Gemini ${resp.status}. Retry #${attempt + 1} in ${waitMs}ms`);
+        await _sleep(waitMs); attempt++; continue;
+      }
+
+      if (!resp.ok) {
+        const txt = await resp.text().catch(()=> '');
+        throw new Error(`Gemini ${resp.status} ${resp.statusText} — ${txt}`);
+      }
+
+      const data = await resp.json();
+      const text =
+        data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('')?.trim() ||
+        data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+        '';
+      if (!text) throw new Error('Gemini trả về rỗng');
+      return text;
+    } catch (e) {
+      lastErr = e;
+      const jitter = Math.floor(Math.random() * 400);
+      const waitMs = CONFIG.BASE_BACKOFF_MS * Math.pow(CONFIG.BACKOFF_FACTOR, attempt) + jitter;
+      console.warn(`Gemini request failed (attempt ${attempt + 1}/${CONFIG.MAX_RETRIES + 1}): ${e?.message || e}. Retry in ${waitMs}ms`);
+      await _sleep(waitMs); attempt++;
+    }
+  }
+  throw lastErr || new Error('Gemini request failed after retries');
+}
+
+/** Call Gemini with current key; if it ultimately fails, prompt for new key once and retry */
+async function _geminiGenerateContent({ system, user, model = CONFIG.MODEL, temperature = 0 }) {
+  // ensure key from cache or prompt
+  if (!STATE.apiKey) {
+    STATE.apiKey = (window.__QUIZBOT_API_KEY || '').trim();
+  }
+  if (!STATE.apiKey) {
+    const k = await _promptApiKey();
+    if (!k) throw new Error('Không có API key.');
+    STATE.apiKey = k; window.__QUIZBOT_API_KEY = k;
+  }
+
+  try {
+    return await _geminiGenerateContentOnce({ system, user, model, temperature });
+  } catch (e) {
+    console.warn('[Gemini] thất bại sau max retries. Thử nhập API key mới...', e?.message || e);
+    const k = await _promptApiKey();
+    if (!k) throw e;
+    STATE.apiKey = k; window.__QUIZBOT_API_KEY = k;
+    // retry a fresh round
+    return await _geminiGenerateContentOnce({ system, user, model, temperature });
+  }
+}
+
+/* =========================
+ * 4) DOM extractors
+ * ========================= */
+function _getRoot() { return STATE.selectors.getRoot(); }
+
+function _extractRadioOptions(root) {
+  const labels = [...root.querySelectorAll(STATE.selectors.optionLabels)];
+  if (!labels.length) return null;
+  return labels.map(label => {
+    const li = label.closest('li');
+    const radio = li?.querySelector('input[type="radio"]');
+    const text = (label.innerText || li?.innerText || '').trim();
+    return { li, radio, label, text };
+  });
+}
+
+function _extractCheckboxOptions(root) {
+  const inputs = [...root.querySelectorAll('ul.list-block li input[type="checkbox"]')];
+  if (!inputs.length) return null;
+  return inputs.map(input => {
+    let text =
+      input.closest('div.custom-test-case-checkbox')?.querySelector('span')?.innerText?.trim() ||
+      input.getAttribute('aria-label') ||
+      input.closest('li')?.innerText?.trim() || '';
+    text = text.replace(/^.*?:\s*/, '').replace(/\(see .*$/i, '').trim();
+    return { input, text };
+  });
+}
+
+function _parseIndicesArray(raw, maxLen) {
+  let arr = [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) arr = parsed;
+    else if (Array.isArray(parsed.indices)) arr = parsed.indices;
+    else if (typeof parsed.index === 'number') arr = [parsed.index];
+  } catch (_e) {
+    const m = raw.match(/"indices"\s*:\s*\[([^\]]*)\]/i);
+    if (m && m[1]) {
+      arr = m[1].split(/[, ]+/).map(x => Number(x)).filter(n => Number.isFinite(n));
+    } else {
+      arr = (raw.match(/\d+/g) || []).map(Number).filter(Number.isFinite);
+    }
+  }
+  const seen = new Set(), clean = [];
+  for (const n of arr) {
+    const k = Math.trunc(n);
+    if (!Number.isInteger(k)) continue;
+    if (k < 0 || k >= maxLen) continue;
+    if (!seen.has(k)) { seen.add(k); clean.push(k); }
+  }
+  return clean;
+}
+
+/* =========================
+ * 5) Answer one question
+ * ========================= */
+async function _answerOne(root = _getRoot()) {
+  const qEl = root.querySelector(STATE.selectors.question);
+  const question = (qEl?.innerText || '').trim();
+
+  // Try checkbox first
+  const cbItems = _extractCheckboxOptions(root);
+  if (cbItems?.length) {
+    const options = cbItems.map(it => it.text);
+    const systemPrompt =
+      'Bạn là trợ lý làm trắc nghiệm. CÓ THỂ có NHIỀU đáp án đúng. ' +
+      'Chỉ được trả về JSON: {"indices":[<0-based ints>], "reason":"<ngắn gọn>"} — không thêm chữ nào khác.';
+    const userPrompt = [
+      `Câu hỏi: ${question}`,
+      `Các lựa chọn (0-based):`,
+      ...options.map((op, i) => `  ${i}. ${op}`),
+      `Yêu cầu: Chỉ trả về JSON {"indices":[...], "reason":"..."} (0-based).`
+    ].join('\n');
+
+    const raw = await _geminiGenerateContent({ system: systemPrompt, user: userPrompt, temperature: 0 });
+    const indices = _parseIndicesArray(raw, options.length);
+    if (!indices.length) throw new Error('Model không trả về indices hợp lệ cho checkbox');
+
+    for (const idx of indices) {
+      const it = cbItems[idx];
+      if (!it?.input) continue;
+      if (!it.input.checked) {
+        it.input.click();
+        it.input.dispatchEvent(new Event('change', { bubbles: true }));
+        it.input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      await _sleep(60);
+    }
+    console.log('%c✔ Checkbox:', 'color:#16a34a;font-weight:700', indices, indices.map(i => options[i]));
+    let reason = ''; try { reason = JSON.parse(raw)?.reason || ''; } catch {}
+    return { type: 'multi', question, options, indices, reason };
+  }
+
+  // Fallback: radio
+  const rItems = _extractRadioOptions(root);
+  if (!rItems?.length) throw new Error('Không tìm thấy lựa chọn (checkbox/radio).');
+  const options = rItems.map(it => it.text);
+
+  const systemPrompt =
+    'Bạn là trợ lý làm trắc nghiệm. Chỉ chọn 1 đáp án đúng nhất. ' +
+    'Chỉ được trả về JSON: {"index": <0-based int>, "reason": "<ngắn gọn>"} — không kèm chữ nào khác.';
+  const userPrompt = [
+    `Câu hỏi: ${question}`,
+    `Các lựa chọn (0-based):`,
+    ...options.map((op, i) => `  ${i}. ${op}`),
+    `Yêu cầu: Chỉ trả về JSON đúng chuẩn: {"index": <int>, "reason": "<ngắn gọn>"}.`
+  ].join('\n');
+
+  const raw = await _geminiGenerateContent({ system: systemPrompt, user: userPrompt, temperature: 0 });
+  let index = -1, reason = '';
+  try { const p = JSON.parse(raw); index = Number(p.index); reason = String(p.reason || ''); }
+  catch {
+    const m = raw.match(/"index"\s*:\s*(\d+)/) || raw.match(/\b(\d+)\b/);
+    if (m) index = Number(m[1]);
+  }
+  if (!Number.isInteger(index) || index < 0 || index >= options.length) {
+    throw new Error('Model trả về index không hợp lệ (radio)');
+  }
+
+  const target = rItems[index];
+  if (target?.label) target.label.click();
+  else if (target?.radio) {
+    target.radio.checked = true;
+    target.radio.dispatchEvent(new Event('change', { bubbles: true }));
+    target.radio.dispatchEvent(new Event('input', { bubbles: true }));
+    target.radio.click();
+  } else if (target?.li) { target.li.click(); }
+
+  console.log('%c✔ Radio:', 'color:#16a34a;font-weight:700', index, options[index]);
+  if (reason) console.log('Lý do:', reason);
+  return { type: 'single', question, options, index, reason };
+}
+
+/* =========================
+ * 6) Navigation
+ * ========================= */
+async function _clickNext(root = _getRoot()) {
+  await _sleep(CONFIG.DELAY_AFTER_SELECT);
+  const btn = STATE.selectors.nextButtonFinder(root);
+  if (!btn) { console.warn('Không tìm thấy nút Next.'); return false; }
+  await _sleep(CONFIG.DELAY_BEFORE_NEXT);
+  btn.click();
+  console.log('%c➡️  Next', 'color:#2563eb;font-weight:700');
+  return true;
+}
+
+async function _waitForNextQuestion(prevText, root = _getRoot()) {
+  const start = Date.now();
+  while (Date.now() - start < CONFIG.LOAD_TIMEOUT_MS) {
+    await _sleep(CONFIG.POLL_INTERVAL_MS);
+    const q = root.querySelector(STATE.selectors.question);
+    const txt = q?.innerText?.trim();
+    if (txt && txt !== prevText) { await _sleep(150); return txt; }
+  }
+  throw new Error('Hết thời gian chờ câu hỏi mới');
+}
+
+/* =========================
+ * 7) Console image (donation banner)
+ * ========================= */
+const DONATE_IMG_B64 = `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`;// (rút gọn vì dài)
+
+function printConsoleImageFromBase64(base64, { width = 256, height = 256, title = '🙏 If this helped, consider a coffee!' } = {}) {
+  try {
+    const style = [
+      'font-size:1px',
+      `padding:${Math.floor(height/2)}px ${Math.floor(width/2)}px`,
+      `background:url(data:image/png;base64,${base64}) no-repeat`,
+      `background-size:${width}px ${height}px`,
+      'line-height:0',
+      'margin:8px 0',
+      'border-radius:8px'
+    ].join(';');
+    console.log('%c ', style);
+  } catch {
+    console.log('Donate image (data URL):', `data:image/png;base64,${base64}`);
+  }
+  if (title) console.log('%c' + title, 'color:#16a34a;font-weight:700;font-size:14px');
+}
+
+/* =========================
+ * 8) Public API
+ * ========================= */
+export async function runQuiz(opts = {}) {
+  const { apiKey, maxQuestions = Infinity } = opts;
+
+  // Access gate (ECIES token Base64)
+  await _ensureAccessGranted();
+
+  if (apiKey) {
+    STATE.apiKey = String(apiKey).trim();
+    window.__QUIZBOT_API_KEY = STATE.apiKey;
+  } else if (!STATE.apiKey) {
+    STATE.apiKey = (window.__QUIZBOT_API_KEY || '').trim();
+    if (!STATE.apiKey) {
+      const k = await _promptApiKey();
+      if (!k) throw new Error('Không có API key → dừng.');
+      STATE.apiKey = k; window.__QUIZBOT_API_KEY = k;
+    }
+  }
+
+  let count = 0;
+  const results = [];
+  while (count < maxQuestions) {
+    const root = _getRoot();
+    const curQEl = root.querySelector(STATE.selectors.question);
+    const prevText = curQEl?.innerText?.trim() ?? '';
+
+    const one = await _answerOne(root);
+    results.push(one);
+
+    const moved = await _clickNext(root);
+    if (!moved) { console.log('%c⏹ Dừng: không có nút Next.', 'color:#f97316;font-weight:700'); break; }
+
+    try {
+      await _waitForNextQuestion(prevText, root);
+      console.log('%c⏭ Câu hỏi mới đã tải', 'color:#10b981;font-weight:700');
+    } catch (e) {
+      console.warn('⚠ Có thể là câu cuối.', e?.message || e);
+      break;
+    }
+    count++;
+  }
+
+  console.log('%c🏁 Hoàn tất vòng lặp.', 'color:#9333ea;font-weight:700');
+  // Print donation image/banner
+  printConsoleImageFromBase64(DONATE_IMG_B64, { width: 256, height: 256, title: '🙏 Nếu hữu ích, mời mình ly cà phê nhé!' });
+  return results;
+}
+
+// Optional helpers
+export function setApiKey(k) { STATE.apiKey = String(k || '').trim(); window.__QUIZBOT_API_KEY = STATE.apiKey; }
+export function setTTL(ms) { ACCESS.TTL_MS = Math.max(0, Number(ms) || 0); }
+export function setSelectors(partial) { Object.assign(STATE.selectors, partial || {}); }
+
+// Dev helper: decrypt token to see timestamp
+export async function debugDecryptAccessTokenB64(tokenB64) {
+  return _decryptTokenB64ToTimestampMs(tokenB64);
+}
+
+// Attach to window (handy if loaded inline)
+if (typeof window !== 'undefined') {
+  window.QuizBot = { runQuiz, setApiKey, setTTL, setSelectors, debugDecryptAccessTokenB64 };
+}
