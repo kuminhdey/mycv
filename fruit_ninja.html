@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fruit Ninja Camera</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #060611;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #webcam { display: none; }
+
+  #canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: none;
+    background: #000;
+  }
+
+  #toolbar {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 9999;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #toolbar button {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(0, 188, 212, 0.92);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(0, 220, 255, 0.35);
+    backdrop-filter: blur(8px);
+    transition: transform .15s ease, background .15s ease;
+    user-select: none;
+  }
+
+  #toolbar button:hover {
+    transform: scale(1.05);
+    background: rgba(0, 229, 255, 0.98);
+  }
+
+  #status {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: min(90vw, 900px);
+    padding: 8px 14px;
+    border-radius: 999px;
+    color: #ddd;
+    background: rgba(0,0,0,.45);
+    font-size: 13px;
+    text-align: center;
+    backdrop-filter: blur(8px);
+  }
+
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, rgba(0,180,255,.12), rgba(0,0,0,.74));
+    color: white;
+    text-align: center;
+  }
+
+  #startOverlay .box {
+    padding: 28px 34px;
+    border-radius: 22px;
+    background: rgba(0,0,0,.55);
+    box-shadow: 0 0 40px rgba(0,0,0,.55);
+  }
+
+  #startOverlay h1 {
+    font-size: clamp(42px, 7vw, 86px);
+    margin-bottom: 12px;
+  }
+
+  #startOverlay p {
+    color: #bbb;
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  #startBtn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 16px;
+    background: #00d4ff;
+    color: #001018;
+    font-size: 20px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <video id="webcam" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+</div>
+
+<div id="toolbar">
+  <button id="fullscreenBtn">⛶ Full Screen</button>
+  <button id="restartBtn">🔄 Restart</button>
+  <button id="pauseBtn">⏸ Pause</button>
+</div>
+
+<div id="status">Đang khởi động camera...</div>
+
+<div id="startOverlay">
+  <div class="box">
+    <h1>🍉 Fruit Ninja</h1>
+    <p>Dùng ngón trỏ để chém trái cây. Nhấn F để Full Screen.</p>
+    <button id="startBtn">▶ Start Game</button>
+  </div>
+</div>
+
+<script type="module">
+import { FilesetResolver, HandLandmarker } from
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+
+// ── DOM ────────────────────────────────────────────────────────────────
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+const video   = document.getElementById('webcam');
+const status  = document.getElementById('status');
+
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const restartBtn    = document.getElementById('restartBtn');
+const pauseBtn      = document.getElementById('pauseBtn');
+const startOverlay  = document.getElementById('startOverlay');
+const startBtn      = document.getElementById('startBtn');
+
+// ── Responsive canvas ─────────────────────────────────────────────────
+let W = window.innerWidth;
+let H = window.innerHeight;
+
+function resizeGame() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+
+resizeGame();
+window.addEventListener('resize', resizeGame);
+document.addEventListener('fullscreenchange', () => {
+  resizeGame();
+  fullscreenBtn.textContent = document.fullscreenElement ? '❎ Exit' : '⛶ Full Screen';
+});
+
+// ── Fruit definitions ─────────────────────────────────────────────────
+const FRUITS = [
+  { name:'watermelon', label:'🍉', color:'#22aa22', inner:'#ff4466', r:46 },
+  { name:'orange',     label:'🍊', color:'#ff8800', inner:'#ffaa44', r:36 },
+  { name:'apple',      label:'🍎', color:'#cc2222', inner:'#ff6666', r:34 },
+  { name:'banana',     label:'🍌', color:'#ddcc00', inner:'#ffee44', r:32 },
+  { name:'strawberry', label:'🍓', color:'#cc2244', inner:'#ff6688', r:28 },
+  { name:'grape',      label:'🍇', color:'#882299', inner:'#bb55cc', r:27 },
+  { name:'bomb',       label:'💣', color:'#222222', inner:null,       r:34 },
+];
+
+// ── Config ────────────────────────────────────────────────────────────
+const MAX_LIVES      = 6;
+const WIN_SCORE      = 30;
+const TRAIL_LEN      = 26;
+const BASE_INTERVAL  = 1400;
+const GRAVITY        = 0.42;
+
+// ── State ─────────────────────────────────────────────────────────────
+let fruits     = [];
+let particles  = [];
+let trail      = [];
+let score      = 0;
+let lives      = MAX_LIVES;
+let gameOver   = false;
+let lastSpawn  = 0;
+let flashRed   = 0;
+let comboCount = 0;
+let comboTime  = 0;
+let fingerTip  = null;
+let paused     = false;
+let shakeFrames = 0;
+let handLandmarker = null;
+let lastVideoTime  = -1;
+let lastLandmarks  = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function lighten(hex, amt) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+// ── Particle ──────────────────────────────────────────────────────────
+class Particle {
+  constructor(x, y, color) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 3 + Math.random() * 9;
+    this.x = x;
+    this.y = y;
+    this.vx = Math.cos(a) * s;
+    this.vy = Math.sin(a) * s - 3;
+    this.color = color;
+    this.life = 1.0;
+    this.r = 3 + Math.random() * 5 | 0;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.35;
+    this.life -= 0.035;
+    return this.life > 0;
+  }
+
+  draw() {
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ── Fruit ─────────────────────────────────────────────────────────────
+class Fruit {
+  constructor() {
+    const info = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+    Object.assign(this, info);
+
+    const scale = clamp(Math.min(W, H) / 720, 0.85, 1.55);
+    this.r = Math.round(this.r * scale);
+
+    this.x   = this.r + 30 + Math.random() * Math.max(40, W - this.r * 2 - 60);
+    this.y   = H + this.r + 10;
+    this.vx  = (Math.random() - 0.5) * (5 + scale);
+    this.vy  = -(13 + Math.random() * 8 + scale * 2);
+    this.rot = 0;
+    this.rspd = (Math.random() - 0.5) * 9;
+    this.sliced = false;
+    this.missed = false;
+  }
+
+  update() {
+    this.vy  += GRAVITY;
+    this.x   += this.vx;
+    this.y   += this.vy;
+    this.rot += this.rspd;
+
+    if (this.x < this.r) {
+      this.x = this.r;
+      this.vx *= -0.75;
+    }
+    if (this.x > W - this.r) {
+      this.x = W - this.r;
+      this.vx *= -0.75;
+    }
+
+    if (this.y > H + this.r + 80) {
+      if (!this.sliced) this.missed = true;
+      return false;
+    }
+    return true;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot * Math.PI / 180);
+
+    ctx.save();
+    ctx.translate(0, this.r + 4);
+    ctx.scale(1, 0.26);
+    ctx.beginPath();
+    ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.fill();
+    ctx.restore();
+
+    const grad = ctx.createRadialGradient(-this.r * 0.3, -this.r * 0.35, 1, 0, 0, this.r);
+    grad.addColorStop(0, lighten(this.color, 70));
+    grad.addColorStop(1, this.color);
+    ctx.beginPath();
+    ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = Math.max(2, this.r * 0.06);
+    ctx.stroke();
+
+    ctx.font = `${this.r * 1.1}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.label, 0, 1);
+
+    ctx.restore();
+  }
+
+  hitTest(points) {
+    if (this.sliced || points.length < 2) return false;
+
+    for (let i = 1; i < points.length; i++) {
+      const {x:x1, y:y1} = points[i - 1];
+      const {x:x2, y:y2} = points[i];
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 1) continue;
+
+      const t = Math.max(0, Math.min(1, ((this.x - x1) * dx + (this.y - y1) * dy) / (len * len)));
+      const nx = x1 + t * dx;
+      const ny = y1 + t * dy;
+
+      if (Math.hypot(this.x - nx, this.y - ny) < this.r * 1.85) return true;
+    }
+    return false;
+  }
+}
+
+// ── Spawn ─────────────────────────────────────────────────────────────
+function spawnInterval() {
+  return Math.max(460, BASE_INTERVAL - score * 22);
+}
+
+function maybeSpawn(now) {
+  if (now - lastSpawn > spawnInterval()) {
+    const count = score > 18 ? 3 : score > 8 ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      if (Math.random() < 0.78 || i === 0) fruits.push(new Fruit());
+    }
+    lastSpawn = now;
+  }
+}
+
+// ── Slice / Bomb ──────────────────────────────────────────────────────
+function sliceFruit(f) {
+  f.sliced = true;
+  score++;
+  comboCount++;
+  comboTime = performance.now();
+
+  for (let i = 0; i < 24; i++) particles.push(new Particle(f.x, f.y, f.color));
+  if (f.inner) for (let i = 0; i < 14; i++) particles.push(new Particle(f.x, f.y, f.inner));
+}
+
+function hitBomb(f) {
+  f.sliced = true;
+  lives--;
+  comboCount = 0;
+  flashRed = 18;
+  shakeFrames = 20;
+
+  for (let i = 0; i < 26; i++) particles.push(new Particle(f.x, f.y, '#333'));
+  for (let i = 0; i < 10; i++) particles.push(new Particle(f.x, f.y, '#ff6633'));
+
+  if (lives <= 0) endGame();
+}
+
+function endGame() {
+  gameOver = true;
+}
+
+// ── Draw background ───────────────────────────────────────────────────
+function drawBackground() {
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#071023');
+  bg.addColorStop(0.55, '#060611');
+  bg.addColorStop(1, '#020207');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = '#00e5ff';
+  for (let i = 0; i < 40; i++) {
+    const x = (i * 241) % W;
+    const y = (i * 137) % H;
+    ctx.beginPath();
+    ctx.arc(x, y, 2 + (i % 4), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ── HUD ───────────────────────────────────────────────────────────────
+function drawHUD() {
+  ctx.save();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${clamp(W * 0.034, 34, 58)}px Arial`;
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = 'rgba(0,0,0,.75)';
+  ctx.fillStyle = '#00ffbb';
+  ctx.strokeText(`SCORE ${score}`, 22, 62);
+  ctx.fillText(`SCORE ${score}`, 22, 62);
+
+  ctx.font = `${clamp(W * 0.025, 28, 46)}px serif`;
+  ctx.textAlign = 'right';
+  for (let i = 0; i < MAX_LIVES; i++) {
+    ctx.fillStyle = i < lives ? '#ff3355' : '#3b3b44';
+    ctx.fillText('♥', W - 26 - i * clamp(W * 0.032, 36, 58), 58);
+  }
+
+  if (comboCount >= 3 && performance.now() - comboTime < 900) {
+    const age = (performance.now() - comboTime) / 900;
+    ctx.globalAlpha = 1 - age;
+    ctx.font = `900 ${clamp(W * 0.05, 48, 92) - age * 12}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#00eeff';
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = '#00eeff';
+    ctx.strokeStyle = 'rgba(0,0,0,.8)';
+    ctx.lineWidth = 8;
+    ctx.strokeText(`COMBO ×${comboCount}!`, W / 2, H / 2 - 70);
+    ctx.fillText(`COMBO ×${comboCount}!`, W / 2, H / 2 - 70);
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  ctx.font = '14px Arial';
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.textAlign = 'left';
+  ctx.fillText('F = Full Screen  |  R = Restart  |  P = Pause  |  Q/Esc = thoát', 12, H - 14);
+  ctx.textAlign = 'right';
+  ctx.fillText('Made by Dang Duc Minh', W - 12, H - 14);
+
+  ctx.restore();
+}
+
+// ── Trail ─────────────────────────────────────────────────────────────
+function drawTrail() {
+  if (trail.length < 2) return;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (let i = 1; i < trail.length; i++) {
+    const t = i / trail.length;
+    ctx.beginPath();
+    ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+    ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.strokeStyle = `rgba(${80 + t * 140 | 0}, ${180 + t * 70 | 0}, 255, ${t * 0.92})`;
+    ctx.lineWidth = 2 + t * clamp(W * 0.007, 7, 14);
+    ctx.shadowColor = '#6feaff';
+    ctx.shadowBlur = 18;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawFingerDot() {
+  if (!fingerTip) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(fingerTip.x, fingerTip.y, 20, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(fingerTip.x, fingerTip.y, 10, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(80,220,255,0.9)';
+  ctx.shadowColor = '#00e5ff';
+  ctx.shadowBlur = 22;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── Game over overlay ─────────────────────────────────────────────────
+function drawGameOver() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.64)';
+  ctx.fillRect(0, 0, W, H);
+
+  const win = score >= WIN_SCORE;
+  ctx.textAlign = 'center';
+  ctx.font = `900 ${clamp(W * 0.075, 70, 130)}px Arial`;
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(0,0,0,.8)';
+  ctx.fillStyle = win ? '#00ff88' : '#ff3355';
+  ctx.strokeText(win ? '🏆 YOU WIN!' : '💀 GAME OVER', W / 2, H / 2 - 45);
+  ctx.fillText(win ? '🏆 YOU WIN!' : '💀 GAME OVER', W / 2, H / 2 - 45);
+
+  ctx.font = `900 ${clamp(W * 0.034, 32, 58)}px Arial`;
+  ctx.fillStyle = '#eeeeee';
+  ctx.fillText(`Score: ${score}`, W / 2, H / 2 + 35);
+
+  ctx.font = `500 ${clamp(W * 0.018, 20, 32)}px Arial`;
+  ctx.fillStyle = '#bbbbbb';
+  ctx.fillText('Nhấn R để chơi lại  |  F để Full Screen  |  Q để thoát', W / 2, H / 2 + 90);
+
+  ctx.restore();
+}
+
+function drawPaused() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.font = `900 ${clamp(W * 0.065, 64, 110)}px Arial`;
+  ctx.fillStyle = '#00e5ff';
+  ctx.strokeStyle = 'rgba(0,0,0,.8)';
+  ctx.lineWidth = 10;
+  ctx.strokeText('PAUSED', W / 2, H / 2);
+  ctx.fillText('PAUSED', W / 2, H / 2);
+  ctx.font = `500 ${clamp(W * 0.018, 20, 32)}px Arial`;
+  ctx.fillStyle = '#ddd';
+  ctx.fillText('Nhấn P hoặc nút Resume để tiếp tục', W / 2, H / 2 + 55);
+  ctx.restore();
+}
+
+// ── Hand skeleton ─────────────────────────────────────────────────────
+const HAND_CONN = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17],
+];
+
+function drawHandSkeleton(landmarksList) {
+  if (!landmarksList) return;
+  ctx.save();
+  for (const lms of landmarksList) {
+    const pts = lms.map(l => ({ x: (1 - l.x) * W, y: l.y * H }));
+
+    ctx.strokeStyle = 'rgba(100,255,120,0.48)';
+    ctx.lineWidth = 2;
+    for (const [a,b] of HAND_CONN) {
+      ctx.beginPath();
+      ctx.moveTo(pts[a].x, pts[a].y);
+      ctx.lineTo(pts[b].x, pts[b].y);
+      ctx.stroke();
+    }
+
+    for (const p of pts) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(180,255,180,0.75)';
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────
+function resetGame() {
+  fruits = [];
+  particles = [];
+  trail = [];
+  score = 0;
+  lives = MAX_LIVES;
+  gameOver = false;
+  flashRed = 0;
+  comboCount = 0;
+  comboTime = 0;
+  fingerTip = null;
+  shakeFrames = 0;
+  paused = false;
+  pauseBtn.textContent = '⏸ Pause';
+  lastSpawn = performance.now();
+}
+
+// ── Full screen / controls ────────────────────────────────────────────
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+fullscreenBtn.addEventListener('click', toggleFullscreen);
+restartBtn.addEventListener('click', resetGame);
+pauseBtn.addEventListener('click', () => {
+  paused = !paused;
+  pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+});
+startBtn.addEventListener('click', () => {
+  startOverlay.style.display = 'none';
+  resetGame();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') resetGame();
+  if (e.key === 'p' || e.key === 'P') {
+    paused = !paused;
+    pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+  }
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'q' || e.key === 'Q' || e.key === 'Escape') window.close();
+});
+
+// ── Main loop ─────────────────────────────────────────────────────────
+function gameLoop(now) {
+  // Detect hand from video
+  if (handLandmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+    const result = handLandmarker.detectForVideo(video, now);
+
+    if (result.landmarks && result.landmarks.length > 0) {
+      lastLandmarks = result.landmarks;
+      const lm = result.landmarks[0];
+
+      // Index finger tip = landmark 8
+      const fx = (1 - lm[8].x) * W;
+      const fy = lm[8].y * H;
+
+      fingerTip = { x: fx, y: fy };
+      trail.push(fingerTip);
+      if (trail.length > TRAIL_LEN) trail.shift();
+    } else {
+      lastLandmarks = null;
+      trail = [];
+      fingerTip = null;
+    }
+  }
+
+  ctx.save();
+
+  if (shakeFrames > 0) {
+    const dx = (Math.random() - 0.5) * 18;
+    const dy = (Math.random() - 0.5) * 18;
+    ctx.translate(dx, dy);
+    shakeFrames--;
+  }
+
+  // Webcam background
+  if (video.readyState >= 2) {
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -W, 0, W, H);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,20,0.46)';
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    drawBackground();
+  }
+
+  if (flashRed > 0) {
+    ctx.fillStyle = `rgba(220,0,0,${flashRed / 18 * 0.42})`;
+    ctx.fillRect(0, 0, W, H);
+    flashRed--;
+  }
+
+  drawHandSkeleton(lastLandmarks);
+
+  if (!paused && !gameOver) {
+    maybeSpawn(now);
+
+    const alive = [];
+    for (const f of fruits) {
+      const ok = f.update();
+
+      if (ok) {
+        if (f.hitTest(trail)) {
+          if (f.name === 'bomb') hitBomb(f);
+          else sliceFruit(f);
+        } else {
+          alive.push(f);
+        }
+      } else {
+        if (f.missed && f.name !== 'bomb') {
+          lives--;
+          comboCount = 0;
+          if (lives <= 0) endGame();
+        }
+      }
+    }
+    fruits = alive;
+
+    if (score >= WIN_SCORE) endGame();
+  }
+
+  particles = particles.filter(p => {
+    p.update();
+    p.draw();
+    return p.life > 0;
+  });
+
+  for (const f of fruits) f.draw();
+
+  drawTrail();
+  drawFingerDot();
+  drawHUD();
+
+  if (paused && !gameOver) drawPaused();
+  if (gameOver) drawGameOver();
+
+  ctx.restore();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Trang cần mở qua HTTPS hoặc localhost để dùng camera.');
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width:  { ideal: 1920 },
+        height: { ideal: 1080 },
+        facingMode: 'user'
+      },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    await video.play();
+    status.textContent = 'Camera OK. Đang tải model MediaPipe...';
+  } catch (e) {
+    status.textContent = '⚠️ ' + e.message;
+    return;
+  }
+
+  try {
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task',
+        delegate: 'CPU'
+      },
+      runningMode: 'VIDEO',
+      numHands: 2,
+      minHandDetectionConfidence: 0.55,
+      minHandPresenceConfidence: 0.55,
+      minTrackingConfidence: 0.5,
+    });
+
+    status.textContent = '';
+    startOverlay.style.display = 'flex';
+  } catch (e) {
+    status.textContent = 'Lỗi MediaPipe: ' + e.message;
+    return;
+  }
+
+  lastSpawn = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+init();
+</script>
+</body>
+</html>
