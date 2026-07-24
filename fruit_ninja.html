@@ -3,15 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Fruit Ninja Camera - Optimized</title>
-
+<title>Fruit Ninja Camera - Fullscreen</title>
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
     width: 100%;
@@ -23,6 +17,12 @@
     overscroll-behavior: none;
   }
 
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   #container {
     position: fixed;
     inset: 0;
@@ -32,249 +32,302 @@
     background: #050510;
   }
 
-  #webcam {
-    display: none;
-  }
+  #webcam { display: none; }
 
   #canvas {
+    display: block;
     width: 100vw;
     height: 100vh;
-    display: block;
-    cursor: none;
     background: #050510;
+    cursor: none;
   }
 
   #toolbar {
     position: fixed;
-    left: 10px;
-    top: max(10px, env(safe-area-inset-top));
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
     z-index: 9999;
     display: flex;
-    gap: 6px;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 24px);
+    pointer-events: auto;
   }
 
-  #toolbar button {
-    border: none;
-    border-radius: 10px;
-    padding: 8px 10px;
-    background: rgba(0, 188, 212, 0.88);
-    color: white;
-    font-size: 12px;
+  .btn, #speedSelect {
+    height: 34px;
+    padding: 0 11px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    background: rgba(0, 188, 212, .86);
+    color: #fff;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    box-shadow: 0 6px 18px rgba(0,0,0,.28);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  #toolbar button:active {
-    transform: scale(0.95);
+  .btn:hover, #speedSelect:hover { transform: translateY(-1px); background: rgba(0, 229, 255, .95); }
+  .btn:active { transform: scale(.97); }
+
+  #speedSelect {
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(24, 24, 38, .82);
   }
 
   #status {
     position: fixed;
     left: 50%;
-    bottom: max(12px, env(safe-area-inset-bottom));
+    bottom: max(14px, env(safe-area-inset-bottom));
     transform: translateX(-50%);
-    color: #ddd;
-    font-size: 13px;
     z-index: 9999;
-    background: rgba(0,0,0,.45);
-    padding: 8px 12px;
-    border-radius: 999px;
+    color: #d7faff;
+    font-size: 13px;
     text-align: center;
-    max-width: 92vw;
+    padding: 8px 13px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.45);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    max-width: calc(100vw - 24px);
   }
 
-  @media (min-width: 900px) {
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 30%, rgba(0,188,212,.18), rgba(0,0,0,.88) 56%, rgba(0,0,0,.95));
+    color: white;
+    text-align: center;
+    padding: 24px;
+  }
+
+  #startBox {
+    width: min(560px, calc(100vw - 32px));
+    padding: 28px 22px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 24px;
+    background: rgba(10, 12, 28, .68);
+    box-shadow: 0 24px 80px rgba(0,0,0,.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  #startBox h1 {
+    font-size: clamp(34px, 7vw, 64px);
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(0,229,255,.72);
+  }
+
+  #startBox p {
+    color: #d7d7d7;
+    line-height: 1.5;
+    margin: 8px 0;
+    font-size: 15px;
+  }
+
+  #startBtn {
+    margin-top: 18px;
+    height: 46px;
+    padding: 0 28px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #00e5ff, #00ff88);
+    color: #021015;
+    font-weight: 900;
+    font-size: 17px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0,229,255,.33);
+  }
+
+  #startBtn:active { transform: scale(.97); }
+
+  @media (max-width: 720px) {
     #toolbar {
-      left: 16px;
-      top: 16px;
-      gap: 8px;
+      top: max(8px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+      gap: 6px;
     }
-
-    #toolbar button {
-      font-size: 14px;
-      padding: 10px 14px;
+    .btn, #speedSelect {
+      height: 30px;
+      padding: 0 9px;
+      font-size: 12px;
     }
-
-    #status {
-      font-size: 14px;
-    }
+    #status { font-size: 12px; }
   }
 </style>
 </head>
-
 <body>
-<div id="container">
-  <video id="webcam" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
-</div>
+  <div id="container">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
 
-<div id="toolbar">
-  <button id="fullscreenBtn">⛶ Full</button>
-  <button id="restartBtn">↻ Restart</button>
-  <button id="pauseBtn">⏸ Pause</button>
-</div>
+  <div id="toolbar">
+    <button class="btn" id="fullscreenBtn" title="Phím F">⛶ Full</button>
+    <button class="btn" id="restartBtn" title="Phím R">🔄 Restart</button>
+    <button class="btn" id="pauseBtn" title="Phím Space/P">⏸ Pause</button>
+    <select id="speedSelect" title="Tốc độ game">
+      <option value="0.75">Chậm</option>
+      <option value="1" selected>Vừa</option>
+      <option value="1.25">Nhanh</option>
+      <option value="1.55">Rất nhanh</option>
+    </select>
+  </div>
 
-<div id="status">Đang khởi động camera...</div>
+  <div id="status">Bấm Start để mở camera...</div>
+
+  <div id="startOverlay">
+    <div id="startBox">
+      <h1>🍉 Fruit Ninja</h1>
+      <p>Dùng đầu ngón trỏ để chém trái cây. Tránh bom 💣.</p>
+      <p>Có item đặc biệt: ⭐ x2 điểm, ❤️ thêm mạng, 🧊 làm chậm.</p>
+      <p>PC: F = Fullscreen, R = Restart, Space/P = Pause.</p>
+      <button id="startBtn">▶ Start Game</button>
+    </div>
+  </div>
 
 <script type="module">
-import {
-  FilesetResolver,
-  HandLandmarker
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
 
-/* =========================
-   DOM
-========================= */
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d", { alpha: false });
+// DOM
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+const video = document.getElementById('webcam');
+const statusEl = document.getElementById('status');
+const startOverlay = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const restartBtn = document.getElementById('restartBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const speedSelect = document.getElementById('speedSelect');
 
-const video = document.getElementById("webcam");
-const statusEl = document.getElementById("status");
-
-const fullscreenBtn = document.getElementById("fullscreenBtn");
-const restartBtn = document.getElementById("restartBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-
-/* =========================
-   Device config
-========================= */
-const IS_MOBILE =
-  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-  window.innerWidth < 900;
-
-const DPR_LIMIT = IS_MOBILE ? 1.35 : 1.75;
-let DPR = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
-
+// Canvas responsive
 let W = 0;
 let H = 0;
+let DPR = 1;
+function resizeGame() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.floor(window.innerWidth);
+  H = Math.floor(window.innerHeight);
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+resizeGame();
+window.addEventListener('resize', resizeGame);
+document.addEventListener('fullscreenchange', () => {
+  fullscreenBtn.textContent = document.fullscreenElement ? '❎ Exit' : '⛶ Full';
+  resizeGame();
+});
 
-/* Mobile detect thấp hơn để đỡ lag */
-const DETECT_INTERVAL = IS_MOBILE ? 55 : 28;
+// Mobile/fullscreen support
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (!document.documentElement.requestFullscreen || isIOS) {
+  // iOS Safari không cho fullscreen toàn document, nên ẩn nút để tránh bấm không có tác dụng.
+  fullscreenBtn.style.display = 'none';
+}
 
-/* Số tay: mobile nên 1 cho nhẹ */
-const NUM_HANDS = IS_MOBILE ? 1 : 2;
-
-/* =========================
-   Game config
-========================= */
+// Game config
 const MAX_LIVES = 5;
-const WIN_SCORE = 40;
-
-const TRAIL_LEN = IS_MOBILE ? 14 : 22;
-const BASE_INTERVAL = IS_MOBILE ? 1200 : 950;
+const WIN_SCORE = 80;
+const TRAIL_LEN_PC = 24;
+const TRAIL_LEN_MOBILE = 16;
+const BASE_INTERVAL = 1120;
+const GRAVITY_BASE = 0.34;
+const MAX_OBJECTS = 9;
+const IS_MOBILE = matchMedia('(pointer: coarse)').matches || innerWidth < 760;
+const TARGET_FPS = IS_MOBILE ? 30 : 60;
+const DETECT_EVERY_MS = IS_MOBILE ? 80 : 33;
 
 const FRUITS = [
-  { name: "watermelon", label: "🍉", color: "#22aa22", inner: "#ff4466", r: 42 },
-  { name: "orange",     label: "🍊", color: "#ff8800", inner: "#ffaa44", r: 34 },
-  { name: "apple",      label: "🍎", color: "#cc2222", inner: "#ff6666", r: 32 },
-  { name: "banana",     label: "🍌", color: "#ddcc00", inner: "#ffee44", r: 30 },
-  { name: "strawberry", label: "🍓", color: "#cc2244", inner: "#ff6688", r: 28 },
-  { name: "grape",      label: "🍇", color: "#882299", inner: "#bb55cc", r: 27 },
-  { name: "bomb",       label: "💣", color: "#222222", inner: null,      r: 31 },
+  { type:'fruit', name:'watermelon', label:'🍉', color:'#22aa22', inner:'#ff4466', r:42, points:1 },
+  { type:'fruit', name:'orange',     label:'🍊', color:'#ff8800', inner:'#ffaa44', r:32, points:1 },
+  { type:'fruit', name:'apple',      label:'🍎', color:'#cc2222', inner:'#ff6666', r:30, points:1 },
+  { type:'fruit', name:'banana',     label:'🍌', color:'#ddcc00', inner:'#ffee44', r:28, points:1 },
+  { type:'fruit', name:'strawberry', label:'🍓', color:'#cc2244', inner:'#ff6688', r:24, points:1 },
+  { type:'fruit', name:'grape',      label:'🍇', color:'#882299', inner:'#bb55cc', r:24, points:1 },
 ];
 
-/* =========================
-   State
-========================= */
-let fruits = [];
+const ITEMS = [
+  { type:'item', name:'double', label:'⭐', color:'#ffd700', inner:'#fff2a0', r:28 },
+  { type:'item', name:'life',   label:'❤️', color:'#ff3355', inner:'#ff9aaa', r:28 },
+  { type:'item', name:'slow',   label:'🧊', color:'#44d9ff', inner:'#c9f7ff', r:28 },
+];
+
+const BOMB = { type:'bomb', name:'bomb', label:'💣', color:'#1b1b1b', inner:'#555', r:30 };
+
+// State
+let handLandmarker = null;
+let lastVideoTime = -1;
+let lastDetectMs = 0;
+let lastFrameMs = 0;
+let objects = [];
 let particles = [];
 let trail = [];
-
+let fingertip = null;
 let score = 0;
+let highScore = Number(localStorage.getItem('fruit_ninja_high_score') || 0);
 let lives = MAX_LIVES;
 let gameOver = false;
 let paused = false;
-
 let lastSpawn = 0;
-let lastDetectAt = 0;
-let lastVideoTime = -1;
-
 let flashRed = 0;
 let shakeFrames = 0;
-
 let comboCount = 0;
 let comboTime = 0;
+let gameSpeed = 1;
+let scoreMultiplier = 1;
+let multiplierUntil = 0;
+let slowUntil = 0;
+let initialized = false;
+let running = false;
 
-let pointer = null;
-let handLandmarker = null;
-
-let usingHand = false;
-let delegateUsed = "GPU";
-
-/* =========================
-   Resize
-========================= */
-function resizeGame() {
-  DPR = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
-
-  W = Math.floor(window.innerWidth);
-  H = Math.floor(window.innerHeight);
-
-  canvas.width = Math.floor(W * DPR);
-  canvas.height = Math.floor(H * DPR);
-
-  canvas.style.width = W + "px";
-  canvas.style.height = H + "px";
-
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
-
-window.addEventListener("resize", resizeGame);
-window.addEventListener("orientationchange", () => {
-  setTimeout(resizeGame, 250);
+speedSelect.addEventListener('change', () => {
+  gameSpeed = Number(speedSelect.value || 1);
 });
-document.addEventListener("fullscreenchange", resizeGame);
 
-resizeGame();
-
-/* =========================
-   Utility
-========================= */
-function rand(min, max) {
-  return min + Math.random() * (max - min);
-}
+function rand(min, max) { return min + Math.random() * (max - min); }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function nowMs() { return performance.now(); }
 
 function lighten(hex, amt) {
-  const r = parseInt(hex.slice(1,3), 16);
-  const g = parseInt(hex.slice(3,5), 16);
-  const b = parseInt(hex.slice(5,7), 16);
-
-  return `rgb(${Math.min(255, r + amt)}, ${Math.min(255, g + amt)}, ${Math.min(255, b + amt)})`;
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;
 }
 
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
-}
-
-/* =========================
-   Particle
-========================= */
 class Particle {
-  constructor(x, y, color) {
+  constructor(x, y, color, power = 1) {
     const a = Math.random() * Math.PI * 2;
-    const s = rand(3, 9);
-
+    const s = rand(2.5, 8.5) * power;
     this.x = x;
     this.y = y;
     this.vx = Math.cos(a) * s;
-    this.vy = Math.sin(a) * s - 3;
+    this.vy = Math.sin(a) * s - rand(1, 3);
     this.color = color;
     this.life = 1;
-    this.r = rand(3, 7);
+    this.r = rand(2, 6);
   }
-
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.vy += 0.34;
-    this.life -= 0.035;
+  update(dt) {
+    const k = dt / 16.67;
+    this.x += this.vx * k;
+    this.y += this.vy * k;
+    this.vy += 0.28 * k;
+    this.life -= 0.032 * k;
     return this.life > 0;
   }
-
   draw() {
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.fillStyle = this.color;
@@ -285,56 +338,39 @@ class Particle {
   }
 }
 
-/* =========================
-   Fruit
-========================= */
-class Fruit {
-  constructor() {
-    const info = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+class FlyingObject {
+  constructor(forcedInfo = null) {
+    const info = forcedInfo || pickObjectInfo();
     Object.assign(this, info);
-
-    const screenScale = clamp(Math.min(W, H) / 700, 0.8, 1.35);
-    this.r = this.r * screenScale;
-
+    this.r = Math.round(this.r * clamp(Math.min(W, H) / 700, 0.78, 1.35));
     this.x = rand(this.r + 30, W - this.r - 30);
-    this.y = H + this.r + rand(20, 80);
+    this.y = H + this.r + rand(8, 80);
+    this.vx = rand(-3.8, 3.8) * clamp(W / 1280, .8, 1.35);
 
-    this.vx = rand(-3.8, 3.8) * screenScale;
-
-    /* Bay cao hơn bản cũ */
-    const powerBase = IS_MOBILE ? 15.5 : 17.5;
-    const powerExtra = Math.min(H / 260, 5);
-    this.vy = -rand(powerBase, powerBase + powerExtra);
-
-    this.gravity = IS_MOBILE ? 0.34 : 0.36;
-
-    this.rot = 0;
+    // Bay cao hơn cho màn hình lớn.
+    const heightBoost = clamp(H / 720, 0.9, 1.45);
+    this.vy = -rand(15.0, 20.5) * heightBoost;
+    this.rot = rand(0, 360);
     this.rspd = rand(-7, 7);
     this.sliced = false;
     this.missed = false;
   }
 
-  update() {
-    this.vy += this.gravity;
-    this.x += this.vx;
-    this.y += this.vy;
-    this.rot += this.rspd;
+  update(dt) {
+    const k = dt / 16.67;
+    const slowFactor = nowMs() < slowUntil ? 0.62 : 1;
+    const spd = gameSpeed * slowFactor;
+    this.vy += GRAVITY_BASE * k * spd;
+    this.x += this.vx * k * spd;
+    this.y += this.vy * k * spd;
+    this.rot += this.rspd * k * spd;
 
-    if (this.x < this.r) {
-      this.x = this.r;
-      this.vx *= -0.75;
-    }
+    if (this.x < this.r || this.x > W - this.r) this.vx *= -0.82;
 
-    if (this.x > W - this.r) {
-      this.x = W - this.r;
-      this.vx *= -0.75;
-    }
-
-    if (this.y > H + this.r + 90) {
+    if (this.y > H + this.r + 80) {
       if (!this.sliced) this.missed = true;
       return false;
     }
-
     return true;
   }
 
@@ -343,660 +379,512 @@ class Fruit {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot * Math.PI / 180);
 
+    // Shadow
     ctx.save();
-    ctx.translate(0, this.r + 4);
-    ctx.scale(1, 0.23);
+    ctx.translate(0, this.r + 5);
+    ctx.scale(1, 0.25);
     ctx.beginPath();
     ctx.arc(0, 0, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.38)";
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
     ctx.fill();
     ctx.restore();
 
-    const grad = ctx.createRadialGradient(
-      -this.r * 0.35,
-      -this.r * 0.35,
-      1,
-      0,
-      0,
-      this.r
-    );
-
-    grad.addColorStop(0, lighten(this.color, 70));
+    // Body
+    const grad = ctx.createRadialGradient(-this.r * .33, -this.r * .33, 2, 0, 0, this.r);
+    grad.addColorStop(0, lighten(this.color, 72));
     grad.addColorStop(1, this.color);
-
     ctx.beginPath();
     ctx.arc(0, 0, this.r, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
-
-    ctx.strokeStyle = "rgba(255,255,255,0.42)";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = Math.max(2, this.r * .06);
+    ctx.strokeStyle = this.type === 'bomb' ? 'rgba(255,80,80,.65)' : 'rgba(255,255,255,.42)';
     ctx.stroke();
 
-    ctx.font = `${this.r * 1.12}px serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(this.label, 0, 1);
+    // Label
+    ctx.font = `${this.r * 1.08}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.label, 0, 2);
 
     ctx.restore();
   }
 
-  hitTest(path) {
-    if (this.sliced || path.length < 2) return false;
-
-    for (let i = 1; i < path.length; i++) {
-      const x1 = path[i - 1].x;
-      const y1 = path[i - 1].y;
-      const x2 = path[i].x;
-      const y2 = path[i].y;
-
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const lenSq = dx * dx + dy * dy;
-
-      if (lenSq < 4) continue;
-
-      const t = clamp(
-        ((this.x - x1) * dx + (this.y - y1) * dy) / lenSq,
-        0,
-        1
-      );
-
+  hitTest(points) {
+    if (this.sliced || points.length < 2) return false;
+    const bonus = IS_MOBILE ? 2.65 : 2.25;
+    for (let i = 1; i < points.length; i++) {
+      const x1 = points[i-1].x, y1 = points[i-1].y;
+      const x2 = points[i].x, y2 = points[i].y;
+      const dx = x2 - x1, dy = y2 - y1;
+      const len2 = dx*dx + dy*dy;
+      if (len2 < 1) continue;
+      const t = clamp(((this.x-x1)*dx + (this.y-y1)*dy) / len2, 0, 1);
       const nx = x1 + t * dx;
       const ny = y1 + t * dy;
-
-      const hitRadius = this.r * (IS_MOBILE ? 1.7 : 1.55);
-
-      if (Math.hypot(this.x - nx, this.y - ny) < hitRadius) {
-        return true;
-      }
+      if (Math.hypot(this.x - nx, this.y - ny) < this.r * bonus) return true;
     }
-
     return false;
   }
 }
 
-/* =========================
-   Spawn
-========================= */
+function pickObjectInfo() {
+  const r = Math.random();
+  const bombChance = clamp(0.10 + score * 0.0018, 0.10, 0.22);
+  const itemChance = 0.13;
+  if (r < bombChance) return BOMB;
+  if (r < bombChance + itemChance) return ITEMS[Math.floor(Math.random() * ITEMS.length)];
+  return FRUITS[Math.floor(Math.random() * FRUITS.length)];
+}
+
+function addParticles(obj, count = 24, power = 1) {
+  for (let i = 0; i < count; i++) particles.push(new Particle(obj.x, obj.y, obj.color, power));
+  if (obj.inner) for (let i = 0; i < Math.floor(count / 2); i++) particles.push(new Particle(obj.x, obj.y, obj.inner, power));
+}
+
 function spawnInterval() {
-  const difficulty = score * (IS_MOBILE ? 10 : 14);
-  return Math.max(IS_MOBILE ? 650 : 430, BASE_INTERVAL - difficulty);
+  const slowFactor = nowMs() < slowUntil ? 1.4 : 1;
+  return clamp((BASE_INTERVAL - score * 7) * slowFactor / gameSpeed, 440, 1300);
 }
 
-function maxFruitsOnScreen() {
-  if (IS_MOBILE) return 5;
-  if (W >= 1800) return 9;
-  return 7;
-}
-
-function maybeSpawn(now) {
-  if (fruits.length >= maxFruitsOnScreen()) return;
-
-  if (now - lastSpawn > spawnInterval()) {
-    const count =
-      score > 25 && !IS_MOBILE ? Math.floor(rand(1, 4)) :
-      score > 15 ? Math.floor(rand(1, 3)) :
-      1;
-
-    for (let i = 0; i < count; i++) {
-      if (fruits.length < maxFruitsOnScreen()) {
-        fruits.push(new Fruit());
-      }
-    }
-
-    lastSpawn = now;
+function maybeSpawn(t) {
+  if (objects.length >= MAX_OBJECTS) return;
+  if (t - lastSpawn > spawnInterval()) {
+    const batch = Math.random() < clamp(score / 120, .10, .45) ? Math.floor(rand(2, 4)) : 1;
+    for (let i = 0; i < batch && objects.length < MAX_OBJECTS; i++) objects.push(new FlyingObject());
+    lastSpawn = t;
   }
 }
 
-/* =========================
-   Slice logic
-========================= */
-function sliceFruit(f) {
-  f.sliced = true;
-  score++;
-
+function sliceObject(obj) {
+  obj.sliced = true;
   comboCount++;
-  comboTime = performance.now();
+  comboTime = nowMs();
 
-  for (let i = 0; i < 18; i++) {
-    particles.push(new Particle(f.x, f.y, f.color));
+  if (obj.type === 'bomb') {
+    lives--;
+    comboCount = 0;
+    flashRed = 20;
+    shakeFrames = 18;
+    addParticles(obj, 28, 1.25);
+    if (lives <= 0) endGame();
+    return;
   }
 
-  if (f.inner) {
-    for (let i = 0; i < 9; i++) {
-      particles.push(new Particle(f.x, f.y, f.inner));
+  if (obj.type === 'item') {
+    if (obj.name === 'double') {
+      scoreMultiplier = 2;
+      multiplierUntil = nowMs() + 9000;
+    } else if (obj.name === 'life') {
+      lives = Math.min(MAX_LIVES, lives + 1);
+    } else if (obj.name === 'slow') {
+      slowUntil = nowMs() + 7000;
     }
-  }
-}
-
-function hitBomb(f) {
-  f.sliced = true;
-
-  lives--;
-  comboCount = 0;
-  flashRed = 18;
-  shakeFrames = IS_MOBILE ? 12 : 18;
-
-  for (let i = 0; i < 22; i++) {
-    particles.push(new Particle(f.x, f.y, "#333333"));
+    addParticles(obj, 34, 1.2);
+    score += 2;
+    return;
   }
 
-  if (lives <= 0) {
-    endGame();
-  }
+  if (nowMs() > multiplierUntil) scoreMultiplier = 1;
+  const comboBonus = comboCount >= 5 ? 2 : comboCount >= 3 ? 1 : 0;
+  score += obj.points * scoreMultiplier + comboBonus;
+  addParticles(obj, 24, 1);
+
+  if (score >= WIN_SCORE) endGame();
 }
 
 function endGame() {
   gameOver = true;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('fruit_ninja_high_score', String(highScore));
+  }
 }
 
-/* =========================
-   Draw
-========================= */
-function drawVideoBackground() {
+function resetGame() {
+  objects = [];
+  particles = [];
+  trail = [];
+  fingertip = null;
+  score = 0;
+  lives = MAX_LIVES;
+  gameOver = false;
+  paused = false;
+  flashRed = 0;
+  shakeFrames = 0;
+  comboCount = 0;
+  scoreMultiplier = 1;
+  multiplierUntil = 0;
+  slowUntil = 0;
+  lastSpawn = nowMs();
+  pauseBtn.textContent = '⏸ Pause';
+}
+
+function togglePause() {
+  if (gameOver) return;
+  paused = !paused;
+  pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+}
+
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  } catch (e) {
+    statusEl.textContent = 'Trình duyệt không hỗ trợ fullscreen cho trang này.';
+  }
+}
+
+fullscreenBtn.onclick = toggleFullscreen;
+restartBtn.onclick = resetGame;
+pauseBtn.onclick = togglePause;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') resetGame();
+  if (e.key === 'p' || e.key === 'P' || e.code === 'Space') togglePause();
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'q' || e.key === 'Q' || e.key === 'Escape') {
+    if (document.fullscreenElement) document.exitFullscreen();
+  }
+});
+
+function drawBackground() {
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#06122a');
+  bg.addColorStop(.55, '#08081a');
+  bg.addColorStop(1, '#03030b');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Soft decorative glows
+  ctx.globalAlpha = .22;
+  ctx.fillStyle = '#00e5ff';
+  ctx.beginPath();
+  ctx.arc(W * .15, H * .2, Math.min(W, H) * .22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#00ff88';
+  ctx.beginPath();
+  ctx.arc(W * .88, H * .78, Math.min(W, H) * .18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawCamera() {
   if (video.readyState >= 2) {
     ctx.save();
-
     ctx.scale(-1, 1);
     ctx.drawImage(video, -W, 0, W, H);
-
     ctx.restore();
-
-    ctx.fillStyle = "rgba(0,0,20,0.48)";
+    ctx.fillStyle = 'rgba(0,0,18,.48)';
     ctx.fillRect(0, 0, W, H);
   } else {
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, "#101028");
-    bg.addColorStop(1, "#050510");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
+    drawBackground();
   }
 }
 
 function drawTrail() {
   if (trail.length < 2) return;
-
   for (let i = 1; i < trail.length; i++) {
     const t = i / trail.length;
-
     ctx.beginPath();
-    ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+    ctx.moveTo(trail[i-1].x, trail[i-1].y);
     ctx.lineTo(trail[i].x, trail[i].y);
-
-    ctx.strokeStyle = `rgba(${80 + t * 120 | 0}, ${160 + t * 80 | 0}, 255, ${t * 0.9})`;
-    ctx.lineWidth = Math.max(3, t * (IS_MOBILE ? 8 : 10));
-    ctx.lineCap = "round";
+    ctx.strokeStyle = `rgba(${Math.floor(80 + t*120)}, ${Math.floor(180 + t*60)}, 255, ${t*.92})`;
+    ctx.lineWidth = Math.max(3, t * (IS_MOBILE ? 10 : 8));
+    ctx.lineCap = 'round';
     ctx.stroke();
   }
 }
 
-function drawPointerDot() {
-  if (!pointer) return;
-
+function drawFingertip() {
+  if (!fingertip) return;
   ctx.beginPath();
-  ctx.arc(pointer.x, pointer.y, IS_MOBILE ? 16 : 18, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.arc(fingertip.x, fingertip.y, IS_MOBILE ? 20 : 18, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,.18)';
   ctx.fill();
-
   ctx.beginPath();
-  ctx.arc(pointer.x, pointer.y, IS_MOBILE ? 8 : 10, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(80,220,255,0.9)";
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(pointer.x, pointer.y, IS_MOBILE ? 3 : 4, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
+  ctx.arc(fingertip.x, fingertip.y, IS_MOBILE ? 11 : 9, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(80,230,255,.92)';
   ctx.fill();
 }
 
 function drawHUD() {
-  const safeTop = IS_MOBILE ? 58 : 70;
+  const pad = IS_MOBILE ? 12 : 18;
+  const scoreSize = clamp(W / 32, 25, 48);
 
   ctx.save();
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.font = `900 ${scoreSize}px Arial`;
+  ctx.lineWidth = Math.max(4, scoreSize * .13);
+  ctx.strokeStyle = 'rgba(0,0,0,.78)';
+  ctx.fillStyle = '#ffffff';
+  const scoreText = `SCORE ${score}`;
+  ctx.strokeText(scoreText, pad, IS_MOBILE ? 52 : 65);
+  ctx.fillText(scoreText, pad, IS_MOBILE ? 52 : 65);
 
-  ctx.textBaseline = "top";
+  ctx.font = `700 ${Math.max(14, scoreSize * .38)}px Arial`;
+  ctx.fillStyle = '#b8f9ff';
+  ctx.fillText(`BEST ${highScore}`, pad + 2, (IS_MOBILE ? 52 : 65) + scoreSize + 4);
 
-  /* Score */
-  ctx.font = `900 ${IS_MOBILE ? 24 : 34}px Arial`;
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = "rgba(0,0,0,.85)";
-  ctx.fillStyle = "#00ffbb";
-  ctx.strokeText(`SCORE ${score}`, 14, safeTop);
-  ctx.fillText(`SCORE ${score}`, 14, safeTop);
-
-  /* Lives nằm góc phải, không bị button che */
-  ctx.font = `${IS_MOBILE ? 24 : 32}px serif`;
-  ctx.textAlign = "right";
-
-  for (let i = 0; i < MAX_LIVES; i++) {
-    ctx.fillStyle = i < lives ? "#ff3355" : "rgba(255,255,255,.22)";
-    ctx.fillText("♥", W - 16 - i * (IS_MOBILE ? 28 : 38), IS_MOBILE ? 18 : 24);
+  if (scoreMultiplier > 1 && nowMs() < multiplierUntil) {
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText(`⭐ x2: ${Math.ceil((multiplierUntil - nowMs())/1000)}s`, pad + 2, (IS_MOBILE ? 52 : 65) + scoreSize + 26);
   }
 
-  /* Combo */
-  if (comboCount >= 3 && performance.now() - comboTime < 850) {
-    const age = (performance.now() - comboTime) / 850;
+  if (nowMs() < slowUntil) {
+    ctx.fillStyle = '#8eeeff';
+    ctx.fillText(`🧊 slow: ${Math.ceil((slowUntil - nowMs())/1000)}s`, pad + 2, (IS_MOBILE ? 52 : 65) + scoreSize + 48);
+  }
 
+  // Lives: đặt trái, dưới toolbar để không bị nút che.
+  ctx.textBaseline = 'middle';
+  ctx.font = `${IS_MOBILE ? 24 : 32}px serif`;
+  const lifeY = IS_MOBILE ? 40 : 38;
+  const lifeX = IS_MOBILE ? 12 : 18;
+  for (let i = 0; i < MAX_LIVES; i++) {
+    ctx.fillStyle = i < lives ? '#ff3355' : 'rgba(255,255,255,.22)';
+    ctx.fillText('♥', lifeX + i * (IS_MOBILE ? 26 : 36), lifeY);
+  }
+
+  // Combo
+  if (comboCount >= 3 && nowMs() - comboTime < 900) {
+    const age = (nowMs() - comboTime) / 900;
     ctx.globalAlpha = 1 - age;
-    ctx.textAlign = "center";
-    ctx.font = `900 ${IS_MOBILE ? 34 - age * 8 : 52 - age * 12}px Arial`;
-    ctx.fillStyle = "#00eeff";
-    ctx.shadowColor = "#00eeff";
-    ctx.shadowBlur = 20;
-
-    ctx.fillText(`COMBO x${comboCount}!`, W / 2, H / 2 - 90);
-
+    ctx.font = `900 ${clamp(W / 18, 42, 76) - age*10}px Arial`;
+    ctx.fillStyle = '#00eeff';
+    ctx.shadowColor = '#00eeff';
+    ctx.shadowBlur = 28;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`COMBO ×${comboCount}!`, W / 2, H / 2 - 70);
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
 
-  /* Footer */
-  ctx.textAlign = "left";
+  // Footer
+  ctx.textBaseline = 'bottom';
   ctx.font = `${IS_MOBILE ? 11 : 13}px Arial`;
-  ctx.fillStyle = "rgba(255,255,255,.45)";
-  ctx.fillText(
-    IS_MOBILE ? "Touch/move hand để chém" : "F: Fullscreen | R: Restart | Space: Pause",
-    10,
-    H - 22
-  );
-
-  ctx.textAlign = "right";
-  ctx.fillText("Made by Dang Duc Minh", W - 10, H - 22);
-
+  ctx.fillStyle = 'rgba(255,255,255,.48)';
+  ctx.textAlign = 'left';
+  ctx.fillText(IS_MOBILE ? 'Chạm màn hình nếu camera chưa chạy' : 'F Fullscreen | R Restart | Space Pause', 10, H - 10);
+  ctx.textAlign = 'right';
+  ctx.fillText('Made by Dang Duc Minh', W - 10, H - 10);
   ctx.restore();
 }
 
 function drawGameOver() {
-  ctx.save();
-
-  ctx.fillStyle = "rgba(0,0,0,0.65)";
+  ctx.fillStyle = 'rgba(0,0,0,.64)';
   ctx.fillRect(0, 0, W, H);
-
   const win = score >= WIN_SCORE;
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${clamp(W/12, 48, 92)}px Arial`;
+  ctx.fillStyle = win ? '#00ff88' : '#ff3355';
+  ctx.shadowColor = win ? '#00ff88' : '#ff3355';
+  ctx.shadowBlur = 28;
+  ctx.fillText(win ? '🏆 YOU WIN!' : '💀 GAME OVER', W/2, H/2 - 54);
 
-  ctx.font = `900 ${IS_MOBILE ? 48 : 76}px Arial`;
-  ctx.fillStyle = win ? "#00ff88" : "#ff3355";
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 8;
+  ctx.shadowBlur = 0;
+  ctx.font = `800 ${clamp(W/32, 24, 42)}px Arial`;
+  ctx.fillStyle = '#fff';
+  ctx.fillText(`Score: ${score}   |   Best: ${highScore}`, W/2, H/2 + 18);
 
-  const title = win ? "🏆 YOU WIN!" : "💀 GAME OVER";
-  ctx.strokeText(title, W / 2, H / 2 - 48);
-  ctx.fillText(title, W / 2, H / 2 - 48);
-
-  ctx.font = `900 ${IS_MOBILE ? 26 : 36}px Arial`;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(`Score: ${score}`, W / 2, H / 2 + 18);
-
-  ctx.font = `${IS_MOBILE ? 17 : 23}px Arial`;
-  ctx.fillStyle = "#cccccc";
-  ctx.fillText("Nhấn Restart hoặc phím R để chơi lại", W / 2, H / 2 + 70);
-
+  ctx.font = `600 ${clamp(W/58, 16, 24)}px Arial`;
+  ctx.fillStyle = '#d2d2d2';
+  ctx.fillText('Nhấn R hoặc nút Restart để chơi lại', W/2, H/2 + 70);
   ctx.restore();
 }
 
-/* =========================
-   Hand detection
-========================= */
-function updateTrailFromPoint(x, y) {
-  pointer = { x, y };
-
-  trail.push({ x, y });
-
-  while (trail.length > TRAIL_LEN) {
-    trail.shift();
-  }
+function drawPaused() {
+  ctx.fillStyle = 'rgba(0,0,0,.42)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${clamp(W/13, 48, 88)}px Arial`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('⏸ PAUSED', W/2, H/2 - 20);
+  ctx.font = `600 ${clamp(W/60, 16, 24)}px Arial`;
+  ctx.fillStyle = '#d0d0d0';
+  ctx.fillText('Nhấn Space/P hoặc Resume để chơi tiếp', W/2, H/2 + 48);
+  ctx.restore();
 }
 
-function clearTrailSoft() {
-  if (trail.length > 0) {
-    trail.shift();
-  } else {
-    pointer = null;
-  }
-}
-
-function detectHand(now) {
+function detectHand(t) {
   if (!handLandmarker || video.readyState < 2) return;
-
-  if (now - lastDetectAt < DETECT_INTERVAL) return;
-  lastDetectAt = now;
-
+  if (t - lastDetectMs < DETECT_EVERY_MS) return;
   if (video.currentTime === lastVideoTime) return;
+  lastDetectMs = t;
   lastVideoTime = video.currentTime;
 
-  try {
-    const result = handLandmarker.detectForVideo(video, now);
-
-    if (result.landmarks && result.landmarks.length > 0) {
-      usingHand = true;
-
-      const lm = result.landmarks[0];
-
-      /* landmark 8 = đầu ngón trỏ */
-      const x = (1 - lm[8].x) * W;
-      const y = lm[8].y * H;
-
-      updateTrailFromPoint(x, y);
-    } else {
-      usingHand = false;
-      clearTrailSoft();
-    }
-  } catch (e) {
-    console.warn(e);
+  const result = handLandmarker.detectForVideo(video, t);
+  if (result.landmarks && result.landmarks.length > 0) {
+    // Landmark 8 là đầu ngón trỏ.
+    const lm = result.landmarks[0][8];
+    const x = (1 - lm.x) * W;
+    const y = lm.y * H;
+    fingertip = { x, y };
+    trail.push({ x, y });
+    const maxTrail = IS_MOBILE ? TRAIL_LEN_MOBILE : TRAIL_LEN_PC;
+    while (trail.length > maxTrail) trail.shift();
+  } else {
+    fingertip = null;
+    trail = [];
   }
 }
 
-/* =========================
-   Main loop
-========================= */
-function gameLoop(now) {
-  if (paused) {
-    drawVideoBackground();
-    drawHUD();
-
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,.48)";
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `900 ${IS_MOBILE ? 48 : 72}px Arial`;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("PAUSED", W / 2, H / 2);
-
-    ctx.restore();
-
+function gameLoop(t) {
+  if (!running) return;
+  const minFrameMs = 1000 / TARGET_FPS;
+  if (t - lastFrameMs < minFrameMs) {
     requestAnimationFrame(gameLoop);
     return;
   }
+  const dt = Math.min(42, t - lastFrameMs || 16.67);
+  lastFrameMs = t;
 
-  detectHand(now);
+  detectHand(t);
 
   ctx.save();
+  drawCamera();
 
   if (shakeFrames > 0) {
-    const power = IS_MOBILE ? 8 : 13;
-    ctx.translate(rand(-power, power), rand(-power, power));
+    ctx.translate(rand(-9, 9), rand(-9, 9));
     shakeFrames--;
   }
 
-  drawVideoBackground();
-
   if (flashRed > 0) {
-    ctx.fillStyle = `rgba(220,0,0,${flashRed / 18 * 0.38})`;
+    ctx.fillStyle = `rgba(220,0,0,${flashRed / 20 * .34})`;
     ctx.fillRect(0, 0, W, H);
     flashRed--;
   }
 
-  if (!gameOver) {
-    maybeSpawn(now);
-
+  if (!paused && !gameOver) {
+    maybeSpawn(t);
     const alive = [];
-
-    for (const f of fruits) {
-      const ok = f.update();
-
+    for (const obj of objects) {
+      const ok = obj.update(dt);
       if (ok) {
-        if (f.hitTest(trail)) {
-          if (f.name === "bomb") {
-            hitBomb(f);
-          } else {
-            sliceFruit(f);
-          }
+        if (obj.hitTest(trail)) {
+          sliceObject(obj);
         } else {
-          alive.push(f);
+          alive.push(obj);
         }
       } else {
-        if (f.missed && f.name !== "bomb") {
+        if (obj.missed && obj.type === 'fruit') {
           lives--;
           comboCount = 0;
-
-          if (lives <= 0) {
-            endGame();
-          }
+          if (lives <= 0) endGame();
         }
       }
     }
-
-    fruits = alive;
-
-    if (score >= WIN_SCORE) {
-      endGame();
-    }
+    objects = alive;
   }
 
   particles = particles.filter(p => {
-    p.update();
+    const alive = paused ? p.life > 0 : p.update(dt);
     p.draw();
-    return p.life > 0;
+    return alive;
   });
 
-  for (const f of fruits) {
-    f.draw();
-  }
-
+  for (const obj of objects) obj.draw();
   drawTrail();
-  drawPointerDot();
+  drawFingertip();
   drawHUD();
-
-  if (gameOver) {
-    drawGameOver();
-  }
+  if (paused && !gameOver) drawPaused();
+  if (gameOver) drawGameOver();
 
   ctx.restore();
-
   requestAnimationFrame(gameLoop);
 }
 
-/* =========================
-   Reset
-========================= */
-function resetGame() {
-  fruits = [];
-  particles = [];
-  trail = [];
-
-  score = 0;
-  lives = MAX_LIVES;
-  gameOver = false;
-  paused = false;
-
-  flashRed = 0;
-  shakeFrames = 0;
-  comboCount = 0;
-  comboTime = 0;
-
-  pointer = null;
-  lastSpawn = performance.now();
-
-  pauseBtn.textContent = "⏸ Pause";
-}
-
-/* =========================
-   Buttons
-========================= */
-fullscreenBtn.onclick = async () => {
-  try {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen();
-      fullscreenBtn.textContent = "❎ Exit";
-    } else {
-      await document.exitFullscreen();
-      fullscreenBtn.textContent = "⛶ Full";
-    }
-  } catch (e) {
-    console.warn(e);
-  }
-};
-
-restartBtn.onclick = () => {
-  resetGame();
-};
-
-pauseBtn.onclick = () => {
-  paused = !paused;
-  pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
-};
-
-/* =========================
-   Keyboard
-========================= */
-document.addEventListener("keydown", async e => {
-  if (e.key === "r" || e.key === "R") {
-    resetGame();
-  }
-
-  if (e.key === " " || e.key === "p" || e.key === "P") {
-    paused = !paused;
-    pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
-  }
-
-  if (e.key === "f" || e.key === "F") {
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-        fullscreenBtn.textContent = "❎ Exit";
-      } else {
-        await document.exitFullscreen();
-        fullscreenBtn.textContent = "⛶ Full";
-      }
-    } catch (err) {
-      console.warn(err);
-    }
-  }
-
-  if (e.key === "q" || e.key === "Q" || e.key === "Escape") {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    }
-  }
-});
-
-/* =========================
-   Mouse / touch fallback
-========================= */
-canvas.addEventListener("pointermove", e => {
-  if (usingHand) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  updateTrailFromPoint(x, y);
-});
-
-canvas.addEventListener("pointerdown", e => {
-  if (usingHand) return;
-
-  const rect = canvas.getBoundingClientRect();
-  updateTrailFromPoint(e.clientX - rect.left, e.clientY - rect.top);
-});
-
-canvas.addEventListener("pointerup", () => {
-  if (!usingHand) {
-    trail = [];
-    pointer = null;
-  }
-});
-
-/* =========================
-   Init camera
-========================= */
-async function initCamera() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    throw new Error("Trình duyệt không hỗ trợ camera hoặc cần mở bằng HTTPS/local server.");
-  }
-
-  const videoConfig = IS_MOBILE
-    ? {
-        width: { ideal: 960 },
-        height: { ideal: 540 },
-        facingMode: "user"
-      }
-    : {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        facingMode: "user"
-      };
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: videoConfig,
-    audio: false
-  });
-
-  video.srcObject = stream;
-  await video.play();
-}
-
-/* =========================
-   Init MediaPipe
-========================= */
-async function createHandLandmarkerWithDelegate(vision, delegate) {
-  return await HandLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task",
-      delegate
-    },
-    runningMode: "VIDEO",
-    numHands: NUM_HANDS,
-    minHandDetectionConfidence: IS_MOBILE ? 0.55 : 0.5,
-    minHandPresenceConfidence: IS_MOBILE ? 0.55 : 0.5,
-    minTrackingConfidence: IS_MOBILE ? 0.5 : 0.45
-  });
-}
-
-async function initMediaPipe() {
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-  );
-
-  try {
-    delegateUsed = "GPU";
-    return await createHandLandmarkerWithDelegate(vision, "GPU");
-  } catch (gpuError) {
-    console.warn("GPU failed, fallback CPU", gpuError);
-
-    delegateUsed = "CPU";
-    return await createHandLandmarkerWithDelegate(vision, "CPU");
-  }
-}
-
-/* =========================
-   Start
-========================= */
 async function init() {
+  if (initialized) return;
+  initialized = true;
+  startBtn.disabled = true;
+  startBtn.textContent = 'Đang mở camera...';
+  statusEl.textContent = 'Đang xin quyền camera...';
+
   try {
-    resizeGame();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Trình duyệt cần HTTPS hoặc localhost để mở camera.');
+    }
 
-    statusEl.textContent = "Đang mở camera...";
-    await initCamera();
+    const constraints = {
+      audio: false,
+      video: {
+        facingMode: 'user',
+        width: { ideal: IS_MOBILE ? 960 : 1280 },
+        height: { ideal: IS_MOBILE ? 540 : 720 },
+        frameRate: { ideal: IS_MOBILE ? 30 : 60, max: IS_MOBILE ? 30 : 60 }
+      }
+    };
 
-    statusEl.textContent = "Camera OK. Đang tải MediaPipe...";
-    handLandmarker = await initMediaPipe();
-
-    statusEl.textContent =
-      IS_MOBILE
-        ? `Mobile mode: ${delegateUsed}, detect nhẹ hơn để giảm lag`
-        : `PC mode: ${delegateUsed}, ready`;
-
-    setTimeout(() => {
-      statusEl.style.display = "none";
-    }, 2200);
-
-    lastSpawn = performance.now();
-    requestAnimationFrame(gameLoop);
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+    await video.play();
+    statusEl.textContent = 'Camera OK. Đang tải model MediaPipe...';
   } catch (e) {
-    console.error(e);
-    statusEl.textContent = "⚠️ " + e.message;
+    statusEl.textContent = '⚠️ ' + e.message;
+    startBtn.disabled = false;
+    startBtn.textContent = '▶ Start Game';
+    initialized = false;
+    return;
   }
+
+  try {
+    const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task',
+        // CPU ổn định hơn trên mobile; PC cũng đủ mượt với 1 tay + giới hạn FPS.
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO',
+      numHands: 1,
+      minHandDetectionConfidence: IS_MOBILE ? 0.50 : 0.56,
+      minHandPresenceConfidence: IS_MOBILE ? 0.50 : 0.56,
+      minTrackingConfidence: IS_MOBILE ? 0.46 : 0.52
+    });
+  } catch (e) {
+    statusEl.textContent = 'Lỗi MediaPipe: ' + e.message;
+    startBtn.disabled = false;
+    startBtn.textContent = '▶ Start Game';
+    initialized = false;
+    return;
+  }
+
+  startOverlay.style.display = 'none';
+  statusEl.textContent = IS_MOBILE ? 'Mobile mode: 30FPS, 1 tay, tối ưu GPU.' : 'PC mode: 60FPS, camera HD.';
+  setTimeout(() => { if (statusEl.textContent) statusEl.textContent = ''; }, 2600);
+  resetGame();
+  running = true;
+  lastFrameMs = performance.now();
+  requestAnimationFrame(gameLoop);
 }
 
-init();
+startBtn.addEventListener('click', init);
+
+// Vẽ màn hình chờ trước khi start
+function idleDraw() {
+  if (running) return;
+  drawBackground();
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${clamp(W/16, 42, 88)}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.fillText('🍉 Fruit Ninja', W/2, H/2 - 30);
+  ctx.font = `600 ${clamp(W/60, 16, 24)}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,.68)';
+  ctx.fillText('Bấm Start để mở camera', W/2, H/2 + 40);
+  ctx.restore();
+  requestAnimationFrame(idleDraw);
+}
+idleDraw();
 </script>
 </body>
 </html>
