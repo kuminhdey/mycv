@@ -194,7 +194,7 @@ const isMobile =
   /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
   Math.min(window.innerWidth, window.innerHeight) < 760;
 
-const MP_DELEGATE = isMobile ? "CPU" : "GPU";
+const MP_DELEGATE = isMobile ? "GPU" : "GPU";
 
 const MAX_LIVES = 6;
 const WIN_SCORE = 30;
