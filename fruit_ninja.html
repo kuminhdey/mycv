@@ -20,7 +20,7 @@
     background: #050510;
     font-family: Arial, Helvetica, sans-serif;
     touch-action: none;
-    user-select: none;
+    overscroll-behavior: none;
   }
 
   #container {
@@ -37,88 +37,70 @@
   }
 
   #canvas {
-    display: block;
     width: 100vw;
     height: 100vh;
-    background: #050510;
+    display: block;
     cursor: none;
-  }
-
-  #status {
-    position: fixed;
-    left: 50%;
-    bottom: calc(86px + env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    z-index: 50;
-    color: #ddd;
-    font-size: 14px;
-    text-align: center;
-    padding: 8px 14px;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(8px);
-    max-width: 92vw;
+    background: #050510;
   }
 
   #toolbar {
     position: fixed;
-    left: 50%;
-    bottom: calc(18px + env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    z-index: 100;
+    left: 10px;
+    top: max(10px, env(safe-area-inset-top));
+    z-index: 9999;
     display: flex;
-    gap: 10px;
+    gap: 6px;
     align-items: center;
-    justify-content: center;
-    padding: 8px;
-    border-radius: 18px;
-    background: rgba(0,0,0,0.38);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 28px rgba(0,0,0,0.45);
   }
 
   #toolbar button {
     border: none;
-    outline: none;
-    padding: 12px 16px;
-    border-radius: 14px;
-    color: #fff;
-    font-size: 15px;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: rgba(0, 188, 212, 0.88);
+    color: white;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    background: linear-gradient(135deg, #00bcd4, #0066ff);
-    box-shadow: 0 5px 16px rgba(0,150,255,0.35);
-    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    backdrop-filter: blur(8px);
   }
 
   #toolbar button:active {
     transform: scale(0.95);
   }
 
-  #toolbar button.secondary {
-    background: linear-gradient(135deg, #555, #222);
+  #status {
+    position: fixed;
+    left: 50%;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    color: #ddd;
+    font-size: 13px;
+    z-index: 9999;
+    background: rgba(0,0,0,.45);
+    padding: 8px 12px;
+    border-radius: 999px;
+    text-align: center;
+    max-width: 92vw;
+    backdrop-filter: blur(8px);
   }
 
-  #toolbar button.danger {
-    background: linear-gradient(135deg, #ff3355, #aa0033);
-  }
-
-  @media (max-width: 700px) {
+  @media (min-width: 900px) {
     #toolbar {
-      gap: 6px;
-      padding: 6px;
-      bottom: calc(12px + env(safe-area-inset-bottom));
+      left: 16px;
+      top: 16px;
+      gap: 8px;
     }
 
     #toolbar button {
-      padding: 10px 11px;
-      font-size: 13px;
-      border-radius: 12px;
+      font-size: 14px;
+      padding: 10px 14px;
     }
 
     #status {
-      font-size: 12px;
-      bottom: calc(74px + env(safe-area-inset-bottom));
+      font-size: 14px;
     }
   }
 </style>
@@ -130,23 +112,26 @@
   <canvas id="canvas"></canvas>
 </div>
 
-<div id="status">Đang khởi động camera...</div>
-
 <div id="toolbar">
   <button id="fullscreenBtn">⛶ Full</button>
-  <button id="restartBtn" class="secondary">🔄 Restart</button>
-  <button id="pauseBtn" class="secondary">⏸ Pause</button>
+  <button id="restartBtn">↻ Restart</button>
+  <button id="pauseBtn">⏸ Pause</button>
 </div>
 
-<script type="module">
-import { FilesetResolver, HandLandmarker } from
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+<div id="status">Đang khởi động camera...</div>
 
-// ============================================================
-// DOM
-// ============================================================
+<script type="module">
+import {
+  FilesetResolver,
+  HandLandmarker
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+
+/* =========================
+   DOM
+========================= */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
+
 const video = document.getElementById("webcam");
 const statusEl = document.getElementById("status");
 
@@ -154,15 +139,77 @@ const fullscreenBtn = document.getElementById("fullscreenBtn");
 const restartBtn = document.getElementById("restartBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 
-// ============================================================
-// Responsive canvas
-// ============================================================
+/* =========================
+   Device config
+========================= */
+const IS_MOBILE =
+  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+  window.innerWidth < 900;
+
+const DPR_LIMIT = IS_MOBILE ? 1.35 : 1.75;
+let DPR = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
+
 let W = 0;
 let H = 0;
-let DPR = 1;
 
+/* Mobile detect thấp hơn để đỡ lag */
+const DETECT_INTERVAL = IS_MOBILE ? 55 : 28;
+
+/* Số tay: mobile nên 1 cho nhẹ */
+const NUM_HANDS = IS_MOBILE ? 1 : 2;
+
+/* =========================
+   Game config
+========================= */
+const MAX_LIVES = 5;
+const WIN_SCORE = 40;
+
+const TRAIL_LEN = IS_MOBILE ? 14 : 22;
+const BASE_INTERVAL = IS_MOBILE ? 1200 : 950;
+
+const FRUITS = [
+  { name: "watermelon", label: "🍉", color: "#22aa22", inner: "#ff4466", r: 42 },
+  { name: "orange",     label: "🍊", color: "#ff8800", inner: "#ffaa44", r: 34 },
+  { name: "apple",      label: "🍎", color: "#cc2222", inner: "#ff6666", r: 32 },
+  { name: "banana",     label: "🍌", color: "#ddcc00", inner: "#ffee44", r: 30 },
+  { name: "strawberry", label: "🍓", color: "#cc2244", inner: "#ff6688", r: 28 },
+  { name: "grape",      label: "🍇", color: "#882299", inner: "#bb55cc", r: 27 },
+  { name: "bomb",       label: "💣", color: "#222222", inner: null,      r: 31 },
+];
+
+/* =========================
+   State
+========================= */
+let fruits = [];
+let particles = [];
+let trail = [];
+
+let score = 0;
+let lives = MAX_LIVES;
+let gameOver = false;
+let paused = false;
+
+let lastSpawn = 0;
+let lastDetectAt = 0;
+let lastVideoTime = -1;
+
+let flashRed = 0;
+let shakeFrames = 0;
+
+let comboCount = 0;
+let comboTime = 0;
+
+let pointer = null;
+let handLandmarker = null;
+
+let usingHand = false;
+let delegateUsed = "GPU";
+
+/* =========================
+   Resize
+========================= */
 function resizeGame() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  DPR = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
 
   W = Math.floor(window.innerWidth);
   H = Math.floor(window.innerHeight);
@@ -180,97 +227,32 @@ window.addEventListener("resize", resizeGame);
 window.addEventListener("orientationchange", () => {
   setTimeout(resizeGame, 250);
 });
-document.addEventListener("fullscreenchange", () => {
-  resizeGame();
-  fullscreenBtn.textContent = document.fullscreenElement ? "❎ Exit" : "⛶ Full";
-});
+document.addEventListener("fullscreenchange", resizeGame);
 
 resizeGame();
 
-// ============================================================
-// Device config
-// ============================================================
-const isMobile =
-  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-  Math.min(window.innerWidth, window.innerHeight) < 760;
-
-const MP_DELEGATE = isMobile ? "CPU" : "GPU";
-
-const MAX_LIVES = 6;
-const WIN_SCORE = 30;
-
-const TRAIL_LEN = isMobile ? 12 : 22;
-const BASE_INTERVAL = isMobile ? 1500 : 1250;
-const MAX_FRUITS_ON_SCREEN = isMobile ? 5 : 9;
-const PARTICLE_MULTIPLIER = isMobile ? 0.45 : 1;
-
-// ============================================================
-// Fruit definitions
-// ============================================================
-const FRUITS = [
-  { name: "watermelon", label: "🍉", color: "#22aa22", inner: "#ff4466", r: 42 },
-  { name: "orange",     label: "🍊", color: "#ff8800", inner: "#ffaa44", r: 32 },
-  { name: "apple",      label: "🍎", color: "#cc2222", inner: "#ff6666", r: 30 },
-  { name: "banana",     label: "🍌", color: "#ddcc00", inner: "#ffee44", r: 28 },
-  { name: "strawberry", label: "🍓", color: "#cc2244", inner: "#ff6688", r: 24 },
-  { name: "grape",      label: "🍇", color: "#882299", inner: "#bb55cc", r: 22 },
-  { name: "bomb",       label: "💣", color: "#222222", inner: null,      r: 30 },
-];
-
-// ============================================================
-// State
-// ============================================================
-let fruits = [];
-let particles = [];
-let trail = [];
-
-let score = 0;
-let lives = MAX_LIVES;
-let gameOver = false;
-let paused = false;
-
-let lastSpawn = 0;
-let flashRed = 0;
-let shakeFrames = 0;
-
-let comboCount = 0;
-let comboTime = 0;
-
-let fingerPoint = null;
-
-let handLandmarker = null;
-let lastVideoTime = -1;
-
-let fps = 0;
-let lastFpsTime = performance.now();
-let frameCount = 0;
-
-// ============================================================
-// Utils
-// ============================================================
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
-}
-
-function lighten(hex, amt) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-
-  return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;
-}
-
+/* =========================
+   Utility
+========================= */
 function rand(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function nowMs() {
-  return performance.now();
+function lighten(hex, amt) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+
+  return `rgb(${Math.min(255, r + amt)}, ${Math.min(255, g + amt)}, ${Math.min(255, b + amt)})`;
 }
 
-// ============================================================
-// Particle
-// ============================================================
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+/* =========================
+   Particle
+========================= */
 class Particle {
   constructor(x, y, color) {
     const a = Math.random() * Math.PI * 2;
@@ -282,14 +264,14 @@ class Particle {
     this.vy = Math.sin(a) * s - 3;
     this.color = color;
     this.life = 1;
-    this.r = rand(2.5, 6);
+    this.r = rand(3, 7);
   }
 
   update() {
     this.x += this.vx;
     this.y += this.vy;
-    this.vy += 0.35;
-    this.life -= 0.04;
+    this.vy += 0.34;
+    this.life -= 0.035;
     return this.life > 0;
   }
 
@@ -303,43 +285,52 @@ class Particle {
   }
 }
 
-// ============================================================
-// Fruit
-// ============================================================
+/* =========================
+   Fruit
+========================= */
 class Fruit {
   constructor() {
     const info = FRUITS[Math.floor(Math.random() * FRUITS.length)];
     Object.assign(this, info);
 
-    const scale = Math.max(0.78, Math.min(W, H) / 900);
-    this.r = this.r * scale;
+    const screenScale = clamp(Math.min(W, H) / 700, 0.8, 1.35);
+    this.r = this.r * screenScale;
 
-    this.x = this.r + 24 + Math.random() * Math.max(10, W - this.r * 2 - 48);
-    this.y = H + this.r + 20;
+    this.x = rand(this.r + 30, W - this.r - 30);
+    this.y = H + this.r + rand(20, 80);
 
-    const centerPull = (W / 2 - this.x) / W;
+    this.vx = rand(-3.8, 3.8) * screenScale;
 
-    this.vx = centerPull * rand(3, 8) + rand(-2.5, 2.5);
-    this.vy = -rand(H * 0.018, H * 0.026);
+    /* Bay cao hơn bản cũ */
+    const powerBase = IS_MOBILE ? 15.5 : 17.5;
+    const powerExtra = Math.min(H / 260, 5);
+    this.vy = -rand(powerBase, powerBase + powerExtra);
+
+    this.gravity = IS_MOBILE ? 0.34 : 0.36;
 
     this.rot = 0;
     this.rspd = rand(-7, 7);
-
     this.sliced = false;
     this.missed = false;
   }
 
   update() {
-    this.vy += H * 0.00062;
+    this.vy += this.gravity;
     this.x += this.vx;
     this.y += this.vy;
     this.rot += this.rspd;
 
-    if (this.x < -this.r * 2 || this.x > W + this.r * 2) {
-      return false;
+    if (this.x < this.r) {
+      this.x = this.r;
+      this.vx *= -0.75;
     }
 
-    if (this.y > H + this.r + 80) {
+    if (this.x > W - this.r) {
+      this.x = W - this.r;
+      this.vx *= -0.75;
+    }
+
+    if (this.y > H + this.r + 90) {
       if (!this.sliced) this.missed = true;
       return false;
     }
@@ -352,17 +343,15 @@ class Fruit {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot * Math.PI / 180);
 
-    // Shadow
     ctx.save();
-    ctx.translate(0, this.r + 5);
-    ctx.scale(1, 0.25);
+    ctx.translate(0, this.r + 4);
+    ctx.scale(1, 0.23);
     ctx.beginPath();
     ctx.arc(0, 0, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillStyle = "rgba(0,0,0,0.38)";
     ctx.fill();
     ctx.restore();
 
-    // Body
     const grad = ctx.createRadialGradient(
       -this.r * 0.35,
       -this.r * 0.35,
@@ -380,36 +369,35 @@ class Fruit {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.strokeStyle = "rgba(255,255,255,0.42)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Emoji
     ctx.font = `${this.r * 1.12}px serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(this.label, 0, 2);
+    ctx.fillText(this.label, 0, 1);
 
     ctx.restore();
   }
 
-  hitTest(points) {
-    if (this.sliced || points.length < 2) return false;
+  hitTest(path) {
+    if (this.sliced || path.length < 2) return false;
 
-    for (let i = 1; i < points.length; i++) {
-      const x1 = points[i - 1].x;
-      const y1 = points[i - 1].y;
-      const x2 = points[i].x;
-      const y2 = points[i].y;
+    for (let i = 1; i < path.length; i++) {
+      const x1 = path[i - 1].x;
+      const y1 = path[i - 1].y;
+      const x2 = path[i].x;
+      const y2 = path[i].y;
 
       const dx = x2 - x1;
       const dy = y2 - y1;
-      const len2 = dx * dx + dy * dy;
+      const lenSq = dx * dx + dy * dy;
 
-      if (len2 < 4) continue;
+      if (lenSq < 4) continue;
 
       const t = clamp(
-        ((this.x - x1) * dx + (this.y - y1) * dy) / len2,
+        ((this.x - x1) * dx + (this.y - y1) * dy) / lenSq,
         0,
         1
       );
@@ -417,7 +405,7 @@ class Fruit {
       const nx = x1 + t * dx;
       const ny = y1 + t * dy;
 
-      const hitRadius = this.r * (isMobile ? 2.35 : 2.15);
+      const hitRadius = this.r * (IS_MOBILE ? 1.7 : 1.55);
 
       if (Math.hypot(this.x - nx, this.y - ny) < hitRadius) {
         return true;
@@ -428,48 +416,57 @@ class Fruit {
   }
 }
 
-// ============================================================
-// Game logic
-// ============================================================
+/* =========================
+   Spawn
+========================= */
 function spawnInterval() {
-  return Math.max(480, BASE_INTERVAL - score * 18);
+  const difficulty = score * (IS_MOBILE ? 10 : 14);
+  return Math.max(IS_MOBILE ? 650 : 430, BASE_INTERVAL - difficulty);
 }
 
-function maybeSpawn(t) {
-  if (gameOver || paused) return;
-  if (fruits.length >= MAX_FRUITS_ON_SCREEN) return;
+function maxFruitsOnScreen() {
+  if (IS_MOBILE) return 5;
+  if (W >= 1800) return 9;
+  return 7;
+}
 
-  if (t - lastSpawn > spawnInterval()) {
-    const count = Math.random() < 0.22 && !isMobile ? 2 : 1;
+function maybeSpawn(now) {
+  if (fruits.length >= maxFruitsOnScreen()) return;
+
+  if (now - lastSpawn > spawnInterval()) {
+    const count =
+      score > 25 && !IS_MOBILE ? Math.floor(rand(1, 4)) :
+      score > 15 ? Math.floor(rand(1, 3)) :
+      1;
 
     for (let i = 0; i < count; i++) {
-      if (fruits.length < MAX_FRUITS_ON_SCREEN) {
+      if (fruits.length < maxFruitsOnScreen()) {
         fruits.push(new Fruit());
       }
     }
 
-    lastSpawn = t;
+    lastSpawn = now;
   }
 }
 
-function addParticles(f, amount, color) {
-  const n = Math.floor(amount * PARTICLE_MULTIPLIER);
-  for (let i = 0; i < n; i++) {
-    particles.push(new Particle(f.x, f.y, color));
-  }
-}
-
+/* =========================
+   Slice logic
+========================= */
 function sliceFruit(f) {
   f.sliced = true;
-
   score++;
-  comboCount++;
-  comboTime = nowMs();
 
-  addParticles(f, 22, f.color);
+  comboCount++;
+  comboTime = performance.now();
+
+  for (let i = 0; i < 18; i++) {
+    particles.push(new Particle(f.x, f.y, f.color));
+  }
 
   if (f.inner) {
-    addParticles(f, 12, f.inner);
+    for (let i = 0; i < 9; i++) {
+      particles.push(new Particle(f.x, f.y, f.inner));
+    }
   }
 }
 
@@ -479,10 +476,11 @@ function hitBomb(f) {
   lives--;
   comboCount = 0;
   flashRed = 18;
-  shakeFrames = isMobile ? 10 : 18;
+  shakeFrames = IS_MOBILE ? 12 : 18;
 
-  addParticles(f, 20, "#222");
-  addParticles(f, 10, "#ff3333");
+  for (let i = 0; i < 22; i++) {
+    particles.push(new Particle(f.x, f.y, "#333333"));
+  }
 
   if (lives <= 0) {
     endGame();
@@ -493,58 +491,27 @@ function endGame() {
   gameOver = true;
 }
 
-function resetGame() {
-  fruits = [];
-  particles = [];
-  trail = [];
-
-  score = 0;
-  lives = MAX_LIVES;
-  gameOver = false;
-  paused = false;
-
-  flashRed = 0;
-  shakeFrames = 0;
-  comboCount = 0;
-  fingerPoint = null;
-
-  lastSpawn = nowMs();
-
-  pauseBtn.textContent = "⏸ Pause";
-  statusEl.textContent = "";
-}
-
-// ============================================================
-// Drawing
-// ============================================================
-function drawCameraBackground() {
+/* =========================
+   Draw
+========================= */
+function drawVideoBackground() {
   if (video.readyState >= 2) {
     ctx.save();
 
     ctx.scale(-1, 1);
-
-    const vw = video.videoWidth || 1280;
-    const vh = video.videoHeight || 720;
-
-    const scale = Math.max(W / vw, H / vh);
-    const dw = vw * scale;
-    const dh = vh * scale;
-    const dx = -(W + (dw - W) / 2);
-    const dy = -(dh - H) / 2;
-
-    ctx.drawImage(video, dx, dy, dw, dh);
+    ctx.drawImage(video, -W, 0, W, H);
 
     ctx.restore();
+
+    ctx.fillStyle = "rgba(0,0,20,0.48)";
+    ctx.fillRect(0, 0, W, H);
   } else {
     const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, "#101020");
+    bg.addColorStop(0, "#101028");
     bg.addColorStop(1, "#050510");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
   }
-
-  ctx.fillStyle = "rgba(0,0,18,0.43)";
-  ctx.fillRect(0, 0, W, H);
 }
 
 function drawTrail() {
@@ -557,227 +524,215 @@ function drawTrail() {
     ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
     ctx.lineTo(trail[i].x, trail[i].y);
 
-    ctx.strokeStyle = `rgba(${80 + t * 120 | 0}, ${160 + t * 80 | 0}, 255, ${t * 0.95})`;
-    ctx.lineWidth = Math.max(3, t * (isMobile ? 9 : 11));
+    ctx.strokeStyle = `rgba(${80 + t * 120 | 0}, ${160 + t * 80 | 0}, 255, ${t * 0.9})`;
+    ctx.lineWidth = Math.max(3, t * (IS_MOBILE ? 8 : 10));
     ctx.lineCap = "round";
     ctx.stroke();
   }
 }
 
-function drawFingerDot() {
-  if (!fingerPoint) return;
+function drawPointerDot() {
+  if (!pointer) return;
 
   ctx.beginPath();
-  ctx.arc(fingerPoint.x, fingerPoint.y, isMobile ? 20 : 22, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  ctx.arc(pointer.x, pointer.y, IS_MOBILE ? 16 : 18, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(fingerPoint.x, fingerPoint.y, isMobile ? 10 : 11, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(80,220,255,0.92)";
+  ctx.arc(pointer.x, pointer.y, IS_MOBILE ? 8 : 10, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(80,220,255,0.9)";
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(fingerPoint.x, fingerPoint.y, isMobile ? 4 : 5, 0, Math.PI * 2);
+  ctx.arc(pointer.x, pointer.y, IS_MOBILE ? 3 : 4, 0, Math.PI * 2);
   ctx.fillStyle = "#ffffff";
   ctx.fill();
 }
 
 function drawHUD() {
-  const topPad = 22 + (window.visualViewport ? Math.max(0, window.innerHeight - window.visualViewport.height) : 0);
+  const safeTop = IS_MOBILE ? 58 : 70;
 
-  // Score
   ctx.save();
-  ctx.textAlign = "left";
+
   ctx.textBaseline = "top";
 
-  const scoreFont = isMobile ? 30 : 46;
-  ctx.font = `900 ${scoreFont}px Arial`;
+  /* Score */
+  ctx.font = `900 ${IS_MOBILE ? 24 : 34}px Arial`;
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "rgba(0,0,0,.85)";
+  ctx.fillStyle = "#00ffbb";
+  ctx.strokeText(`SCORE ${score}`, 14, safeTop);
+  ctx.fillText(`SCORE ${score}`, 14, safeTop);
 
-  const scoreText = `SCORE ${score}`;
-
-  ctx.lineWidth = isMobile ? 5 : 7;
-  ctx.strokeStyle = "rgba(0,0,0,0.9)";
-  ctx.strokeText(scoreText, 18, topPad);
-
-  ctx.fillStyle = "#00ffc8";
-  ctx.fillText(scoreText, 18, topPad);
-  ctx.restore();
-
-  // Lives
-  ctx.save();
+  /* Lives nằm góc phải, không bị button che */
+  ctx.font = `${IS_MOBILE ? 24 : 32}px serif`;
   ctx.textAlign = "right";
-  ctx.textBaseline = "top";
-
-  const heartFont = isMobile ? 25 : 34;
-  ctx.font = `${heartFont}px serif`;
-
-  const spacing = isMobile ? 27 : 38;
-  const startX = W - 18;
-  const y = topPad + 4;
 
   for (let i = 0; i < MAX_LIVES; i++) {
-    ctx.fillStyle = i < lives ? "#ff3355" : "rgba(255,255,255,0.22)";
-    ctx.fillText("♥", startX - i * spacing, y);
+    ctx.fillStyle = i < lives ? "#ff3355" : "rgba(255,255,255,.22)";
+    ctx.fillText("♥", W - 16 - i * (IS_MOBILE ? 28 : 38), IS_MOBILE ? 18 : 24);
   }
 
-  ctx.restore();
+  /* Combo */
+  if (comboCount >= 3 && performance.now() - comboTime < 850) {
+    const age = (performance.now() - comboTime) / 850;
 
-  // Combo
-  if (comboCount >= 3 && nowMs() - comboTime < 900) {
-    const age = (nowMs() - comboTime) / 900;
-
-    ctx.save();
     ctx.globalAlpha = 1 - age;
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `900 ${Math.max(28, (isMobile ? 44 : 64) - age * 14)}px Arial`;
+    ctx.font = `900 ${IS_MOBILE ? 34 - age * 8 : 52 - age * 12}px Arial`;
+    ctx.fillStyle = "#00eeff";
+    ctx.shadowColor = "#00eeff";
+    ctx.shadowBlur = 20;
 
-    ctx.shadowColor = "#00ffff";
-    ctx.shadowBlur = 28;
+    ctx.fillText(`COMBO x${comboCount}!`, W / 2, H / 2 - 90);
 
-    ctx.lineWidth = 7;
-    ctx.strokeStyle = "#001018";
-    ctx.strokeText(`COMBO ×${comboCount}!`, W / 2, H * 0.34);
-
-    ctx.fillStyle = "#00eaff";
-    ctx.fillText(`COMBO ×${comboCount}!`, W / 2, H * 0.34);
-
-    ctx.restore();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
   }
 
-  // Small info
-  ctx.save();
-  ctx.font = `${isMobile ? 11 : 13}px Arial`;
-  ctx.fillStyle = "rgba(255,255,255,0.48)";
+  /* Footer */
   ctx.textAlign = "left";
-  ctx.fillText(`${isMobile ? "Mobile CPU" : "PC " + MP_DELEGATE} | FPS ${fps}`, 12, H - 16);
+  ctx.font = `${IS_MOBILE ? 11 : 13}px Arial`;
+  ctx.fillStyle = "rgba(255,255,255,.45)";
+  ctx.fillText(
+    IS_MOBILE ? "Touch/move hand để chém" : "F: Fullscreen | R: Restart | Space: Pause",
+    10,
+    H - 22
+  );
 
   ctx.textAlign = "right";
-  ctx.fillText("Made by Dang Duc Minh", W - 12, H - 16);
-  ctx.restore();
-}
-
-function drawPauseOverlay() {
-  ctx.save();
-
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `900 ${isMobile ? 48 : 72}px Arial`;
-
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = "#000";
-  ctx.strokeText("PAUSED", W / 2, H / 2 - 20);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("PAUSED", W / 2, H / 2 - 20);
-
-  ctx.font = `${isMobile ? 18 : 24}px Arial`;
-  ctx.fillStyle = "#cccccc";
-  ctx.fillText("Nhấn P hoặc nút Resume để chơi tiếp", W / 2, H / 2 + 44);
+  ctx.fillText("Made by Dang Duc Minh", W - 10, H - 22);
 
   ctx.restore();
 }
 
 function drawGameOver() {
-  const win = score >= WIN_SCORE;
-
   ctx.save();
 
-  ctx.fillStyle = "rgba(0,0,0,0.62)";
+  ctx.fillStyle = "rgba(0,0,0,0.65)";
   ctx.fillRect(0, 0, W, H);
+
+  const win = score >= WIN_SCORE;
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  ctx.font = `900 ${isMobile ? 48 : 76}px Arial`;
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = "#000";
-  ctx.strokeText(win ? "🏆 YOU WIN!" : "💀 GAME OVER", W / 2, H / 2 - 52);
-
+  ctx.font = `900 ${IS_MOBILE ? 48 : 76}px Arial`;
   ctx.fillStyle = win ? "#00ff88" : "#ff3355";
-  ctx.fillText(win ? "🏆 YOU WIN!" : "💀 GAME OVER", W / 2, H / 2 - 52);
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 8;
 
-  ctx.font = `800 ${isMobile ? 28 : 38}px Arial`;
+  const title = win ? "🏆 YOU WIN!" : "💀 GAME OVER";
+  ctx.strokeText(title, W / 2, H / 2 - 48);
+  ctx.fillText(title, W / 2, H / 2 - 48);
+
+  ctx.font = `900 ${IS_MOBILE ? 26 : 36}px Arial`;
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(`Score: ${score}`, W / 2, H / 2 + 14);
+  ctx.fillText(`Score: ${score}`, W / 2, H / 2 + 18);
 
-  ctx.font = `${isMobile ? 17 : 23}px Arial`;
+  ctx.font = `${IS_MOBILE ? 17 : 23}px Arial`;
   ctx.fillStyle = "#cccccc";
-  ctx.fillText("Nhấn R để chơi lại", W / 2, H / 2 + 62);
+  ctx.fillText("Nhấn Restart hoặc phím R để chơi lại", W / 2, H / 2 + 70);
 
   ctx.restore();
 }
 
-// ============================================================
-// Hand detection
-// ============================================================
-function updateHand(now) {
-  if (!handLandmarker) return;
+/* =========================
+   Hand detection
+========================= */
+function updateTrailFromPoint(x, y) {
+  pointer = { x, y };
 
-  if (video.readyState < 2) return;
-  if (video.currentTime === lastVideoTime) return;
+  trail.push({ x, y });
 
-  lastVideoTime = video.currentTime;
-
-  const result = handLandmarker.detectForVideo(video, now);
-
-  if (result.landmarks && result.landmarks.length > 0) {
-    // Landmark 8 = đầu ngón trỏ
-    const lm = result.landmarks[0][8];
-
-    const x = (1 - lm.x) * W;
-    const y = lm.y * H;
-
-    fingerPoint = { x, y };
-
-    trail.push({ x, y });
-
-    if (trail.length > TRAIL_LEN) {
-      trail.shift();
-    }
-  } else {
-    fingerPoint = null;
-    trail = [];
+  while (trail.length > TRAIL_LEN) {
+    trail.shift();
   }
 }
 
-// ============================================================
-// Main loop
-// ============================================================
-function gameLoop(now) {
-  frameCount++;
+function clearTrailSoft() {
+  if (trail.length > 0) {
+    trail.shift();
+  } else {
+    pointer = null;
+  }
+}
 
-  if (now - lastFpsTime >= 1000) {
-    fps = frameCount;
-    frameCount = 0;
-    lastFpsTime = now;
+function detectHand(now) {
+  if (!handLandmarker || video.readyState < 2) return;
+
+  if (now - lastDetectAt < DETECT_INTERVAL) return;
+  lastDetectAt = now;
+
+  if (video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+
+  try {
+    const result = handLandmarker.detectForVideo(video, now);
+
+    if (result.landmarks && result.landmarks.length > 0) {
+      usingHand = true;
+
+      const lm = result.landmarks[0];
+
+      /* landmark 8 = đầu ngón trỏ */
+      const x = (1 - lm[8].x) * W;
+      const y = lm[8].y * H;
+
+      updateTrailFromPoint(x, y);
+    } else {
+      usingHand = false;
+      clearTrailSoft();
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+}
+
+/* =========================
+   Main loop
+========================= */
+function gameLoop(now) {
+  if (paused) {
+    drawVideoBackground();
+    drawHUD();
+
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,.48)";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `900 ${IS_MOBILE ? 48 : 72}px Arial`;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("PAUSED", W / 2, H / 2);
+
+    ctx.restore();
+
+    requestAnimationFrame(gameLoop);
+    return;
   }
 
-  updateHand(now);
+  detectHand(now);
 
   ctx.save();
 
   if (shakeFrames > 0) {
-    const power = isMobile ? 8 : 14;
-    const dx = (Math.random() - 0.5) * power;
-    const dy = (Math.random() - 0.5) * power;
-    ctx.translate(dx, dy);
+    const power = IS_MOBILE ? 8 : 13;
+    ctx.translate(rand(-power, power), rand(-power, power));
     shakeFrames--;
   }
 
-  drawCameraBackground();
+  drawVideoBackground();
 
   if (flashRed > 0) {
-    ctx.fillStyle = `rgba(220,0,0,${flashRed / 18 * 0.42})`;
+    ctx.fillStyle = `rgba(220,0,0,${flashRed / 18 * 0.38})`;
     ctx.fillRect(0, 0, W, H);
     flashRed--;
   }
 
-  if (!paused && !gameOver) {
+  if (!gameOver) {
     maybeSpawn(now);
 
     const alive = [];
@@ -814,25 +769,19 @@ function gameLoop(now) {
     }
   }
 
-  // Particles
   particles = particles.filter(p => {
-    const alive = paused ? true : p.update();
+    p.update();
     p.draw();
-    return alive && p.life > 0;
+    return p.life > 0;
   });
 
-  // Fruits
   for (const f of fruits) {
     f.draw();
   }
 
   drawTrail();
-  drawFingerDot();
+  drawPointerDot();
   drawHUD();
-
-  if (paused && !gameOver) {
-    drawPauseOverlay();
-  }
 
   if (gameOver) {
     drawGameOver();
@@ -843,10 +792,34 @@ function gameLoop(now) {
   requestAnimationFrame(gameLoop);
 }
 
-// ============================================================
-// Controls
-// ============================================================
-async function toggleFullscreen() {
+/* =========================
+   Reset
+========================= */
+function resetGame() {
+  fruits = [];
+  particles = [];
+  trail = [];
+
+  score = 0;
+  lives = MAX_LIVES;
+  gameOver = false;
+  paused = false;
+
+  flashRed = 0;
+  shakeFrames = 0;
+  comboCount = 0;
+  comboTime = 0;
+
+  pointer = null;
+  lastSpawn = performance.now();
+
+  pauseBtn.textContent = "⏸ Pause";
+}
+
+/* =========================
+   Buttons
+========================= */
+fullscreenBtn.onclick = async () => {
   try {
     if (!document.fullscreenElement) {
       await document.documentElement.requestFullscreen();
@@ -856,32 +829,44 @@ async function toggleFullscreen() {
       fullscreenBtn.textContent = "⛶ Full";
     }
   } catch (e) {
-    console.error(e);
+    console.warn(e);
   }
-}
+};
 
-function togglePause() {
-  if (gameOver) return;
+restartBtn.onclick = () => {
+  resetGame();
+};
 
+pauseBtn.onclick = () => {
   paused = !paused;
   pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
-}
+};
 
-fullscreenBtn.addEventListener("click", toggleFullscreen);
-restartBtn.addEventListener("click", resetGame);
-pauseBtn.addEventListener("click", togglePause);
-
-document.addEventListener("keydown", e => {
-  if (e.key === "f" || e.key === "F") {
-    toggleFullscreen();
-  }
-
+/* =========================
+   Keyboard
+========================= */
+document.addEventListener("keydown", async e => {
   if (e.key === "r" || e.key === "R") {
     resetGame();
   }
 
-  if (e.key === "p" || e.key === "P") {
-    togglePause();
+  if (e.key === " " || e.key === "p" || e.key === "P") {
+    paused = !paused;
+    pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
+  }
+
+  if (e.key === "f" || e.key === "F") {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        fullscreenBtn.textContent = "❎ Exit";
+      } else {
+        await document.exitFullscreen();
+        fullscreenBtn.textContent = "⛶ Full";
+      }
+    } catch (err) {
+      console.warn(err);
+    }
   }
 
   if (e.key === "q" || e.key === "Q" || e.key === "Escape") {
@@ -891,79 +876,119 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// Prevent mobile scroll / zoom gesture issue
-document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+/* =========================
+   Mouse / touch fallback
+========================= */
+canvas.addEventListener("pointermove", e => {
+  if (usingHand) return;
 
-// ============================================================
-// Init
-// ============================================================
-async function setupCamera() {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  updateTrailFromPoint(x, y);
+});
+
+canvas.addEventListener("pointerdown", e => {
+  if (usingHand) return;
+
+  const rect = canvas.getBoundingClientRect();
+  updateTrailFromPoint(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+canvas.addEventListener("pointerup", () => {
+  if (!usingHand) {
+    trail = [];
+    pointer = null;
+  }
+});
+
+/* =========================
+   Init camera
+========================= */
+async function initCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    throw new Error("Camera cần chạy trên HTTPS hoặc localhost.");
+    throw new Error("Trình duyệt không hỗ trợ camera hoặc cần mở bằng HTTPS/local server.");
   }
 
-  const cameraConfig = isMobile
+  const videoConfig = IS_MOBILE
     ? {
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user"
-        },
-        audio: false
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+        facingMode: "user"
       }
     : {
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          facingMode: "user"
-        },
-        audio: false
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: "user"
       };
 
-  const stream = await navigator.mediaDevices.getUserMedia(cameraConfig);
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: videoConfig,
+    audio: false
+  });
 
   video.srcObject = stream;
   await video.play();
 }
 
-async function createHandLandmarker(delegateName) {
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-  );
-
+/* =========================
+   Init MediaPipe
+========================= */
+async function createHandLandmarkerWithDelegate(vision, delegate) {
   return await HandLandmarker.createFromOptions(vision, {
     baseOptions: {
       modelAssetPath:
         "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task",
-      delegate: delegateName
+      delegate
     },
     runningMode: "VIDEO",
-    numHands: 1,
-    minHandDetectionConfidence: isMobile ? 0.5 : 0.58,
-    minHandPresenceConfidence: isMobile ? 0.5 : 0.58,
-    minTrackingConfidence: isMobile ? 0.45 : 0.52
+    numHands: NUM_HANDS,
+    minHandDetectionConfidence: IS_MOBILE ? 0.55 : 0.5,
+    minHandPresenceConfidence: IS_MOBILE ? 0.55 : 0.5,
+    minTrackingConfidence: IS_MOBILE ? 0.5 : 0.45
   });
 }
 
+async function initMediaPipe() {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+
+  try {
+    delegateUsed = "GPU";
+    return await createHandLandmarkerWithDelegate(vision, "GPU");
+  } catch (gpuError) {
+    console.warn("GPU failed, fallback CPU", gpuError);
+
+    delegateUsed = "CPU";
+    return await createHandLandmarkerWithDelegate(vision, "CPU");
+  }
+}
+
+/* =========================
+   Start
+========================= */
 async function init() {
   try {
+    resizeGame();
+
     statusEl.textContent = "Đang mở camera...";
-    await setupCamera();
+    await initCamera();
 
-    statusEl.textContent = `Camera OK. Đang tải MediaPipe bằng ${MP_DELEGATE}...`;
+    statusEl.textContent = "Camera OK. Đang tải MediaPipe...";
+    handLandmarker = await initMediaPipe();
 
-    try {
-      handLandmarker = await createHandLandmarker(MP_DELEGATE);
-    } catch (gpuError) {
-      console.warn("Delegate failed, fallback CPU:", gpuError);
+    statusEl.textContent =
+      IS_MOBILE
+        ? `Mobile mode: ${delegateUsed}, detect nhẹ hơn để giảm lag`
+        : `PC mode: ${delegateUsed}, ready`;
 
-      statusEl.textContent = "GPU lỗi hoặc không hỗ trợ. Đang fallback CPU...";
-      handLandmarker = await createHandLandmarker("CPU");
-    }
+    setTimeout(() => {
+      statusEl.style.display = "none";
+    }, 2200);
 
-    statusEl.textContent = "";
-    lastSpawn = nowMs();
-
+    lastSpawn = performance.now();
     requestAnimationFrame(gameLoop);
   } catch (e) {
     console.error(e);
