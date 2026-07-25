@@ -1628,7 +1628,6 @@ function gameLoop(t) {
   // ── Split mode: 2 independent players ──────────────────────────────
   // ── Countdown (cả single lẫn split) ───────────────────────────────
   if (countdown >= 0) {
-    if (SP) { for (const p of SP) drawPlayerHalf(p, dt, t); } // vẫn render nền
     drawCountdown();
     if (nowMs() - countdownAt >= 1000) {
       countdown--;
