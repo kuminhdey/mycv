@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Fruit Ninja Camera - Fullscreen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050510;
+    font-family: Arial, Helvetica, sans-serif;
+    touch-action: none;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #container {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #050510;
+  }
+
+  #webcam { display: none; }
+
+  #canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background: #050510;
+    cursor: crosshair;
+  }
+
+  #toolbar {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    z-index: 9999;
+    pointer-events: auto;
+  }
+
+  #menuBtn {
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px;
+    background: rgba(0,188,212,.88);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  #menuBtn:active { transform: scale(.96); }
+
+  #menuPanel {
+    display: none;
+    position: absolute;
+    top: 42px;
+    left: 0;
+    min-width: 200px;
+    background: rgba(8,10,26,.94);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 14px;
+    padding: 6px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  }
+  #menuPanel.open { display: block; }
+
+  .mi {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #e8f8ff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  .mi:hover { background: rgba(255,255,255,.1); }
+  .mi.active { color: #00eeff; }
+  .mi-divider { height: 1px; background: rgba(255,255,255,.1); margin: 4px 6px; }
+
+  .mi select {
+    margin-left: auto;
+    background: rgba(255,255,255,.12);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 4px;
+    cursor: pointer;
+  }
+
+  #status {
+    position: fixed;
+    left: 50%;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 9999;
+    color: #d7faff;
+    font-size: 13px;
+    text-align: center;
+    padding: 8px 13px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    max-width: calc(100vw - 24px);
+  }
+
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 30%, rgba(0,188,212,.18), rgba(0,0,0,.88) 56%, rgba(0,0,0,.95));
+    color: white;
+    text-align: center;
+    padding: 24px;
+  }
+
+  #startBox {
+    width: min(480px, calc(100vw - 32px));
+    padding: 24px 20px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 24px;
+    background: rgba(10, 12, 28, .68);
+    box-shadow: 0 24px 80px rgba(0,0,0,.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  #startBox h1 {
+    font-size: clamp(34px, 7vw, 64px);
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(0,229,255,.72);
+  }
+
+  #startBox p {
+    color: #d7d7d7;
+    line-height: 1.5;
+    margin: 8px 0;
+    font-size: 15px;
+  }
+
+  .sbtn {
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    height: 46px; padding: 0 18px;
+    border-radius: 999px; font-weight: 800; font-size: 15px;
+    cursor: pointer; transition: transform .12s, opacity .12s;
+    letter-spacing: .3px; text-align: center;
+  }
+  .sbtn:active { transform: scale(.96); }
+  .sbtn-primary {
+    border: none;
+    background: linear-gradient(135deg, #00e5ff, #00ff88);
+    color: #021015;
+  }
+  .sbtn-primary:hover { opacity: .9; }
+  .sbtn-ghost {
+    border: 1px solid rgba(255,255,255,.28);
+    background: rgba(255,255,255,.1);
+    color: #fff;
+  }
+  .sbtn-ghost:hover { background: rgba(255,255,255,.18); }
+  .sbtn-gold {
+    border: 1px solid rgba(255,200,0,.5);
+    background: rgba(255,170,0,.18);
+    color: #ffd700;
+  }
+  .sbtn-gold:hover { background: rgba(255,170,0,.28); }
+
+  /* Feature item grid */
+  .fi {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 2px; padding: 8px 4px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+  }
+  .fi-e { font-size: 20px; line-height: 1; }
+  .fi-n { font-size: 12px; font-weight: 700; color: #ddeeff; }
+  .fi-d { font-size: 11px; font-weight: 600; text-align: center; line-height: 1.3; }
+
+  @media (max-width: 720px) {
+    #toolbar {
+      top: max(8px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+      gap: 6px;
+    }
+    .btn, #speedSelect {
+      height: 30px;
+      padding: 0 9px;
+      font-size: 12px;
+    }
+    #status { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div id="container">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="toolbar">
+    <button id="menuBtn">☰ Menu</button>
+    <div id="menuPanel">
+      <button class="mi" id="pauseBtn">⏸ Tạm dừng <small style="margin-left:auto;opacity:.5">Space</small></button>
+      <button class="mi" id="restartBtn">🔄 Chơi lại <small style="margin-left:auto;opacity:.5">R</small></button>
+      <button class="mi" id="homeBtn">🏠 Trang chủ</button>
+      <div class="mi-divider"></div>
+      <button class="mi" id="splitBtn">⚔ 2 Người <small style="margin-left:auto;opacity:.5">V</small></button>
+      <button class="mi" id="soundBtn">🔊 Âm thanh <small style="margin-left:auto;opacity:.5">M</small></button>
+      <button class="mi" id="fullscreenBtn">⛶ Toàn màn hình <small style="margin-left:auto;opacity:.5">F</small></button>
+      <button class="mi" id="debugBtn">🔍 Debug <small style="margin-left:auto;opacity:.5">D</small></button>
+      <div class="mi-divider"></div>
+      <div class="mi" style="justify-content:space-between">
+        <span>🔍 Zoom camera</span>
+        <span style="display:flex;gap:4px;align-items:center">
+          <button onclick="setCamZoom(-1)" style="width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:14px">−</button>
+          <span id="zoomLabel" style="width:32px;text-align:center;font-size:12px">1.0×</span>
+          <button onclick="setCamZoom(+1)" style="width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:14px">+</button>
+        </span>
+      </div>
+      <div class="mi-divider"></div>
+      <label class="mi">🚀 Speed
+        <select id="speedSelect">
+          <option value="0.55">🐢 Rất chậm</option>
+          <option value="0.75">🚶 Chậm</option>
+          <option value="1" selected>🏃 Bình thường</option>
+          <option value="1.3">🚀 Nhanh</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="startOverlay">
+    <div id="startBox">
+      <div style="font-size:clamp(44px,8vw,68px);line-height:1;margin-bottom:6px">🍉</div>
+      <h1 style="margin:0 0 4px">Fruit Ninja</h1>
+      <p style="color:#88ccee;font-size:13px;margin:0 0 16px">Dùng tay · camera · chuột · chạm màn hình để chém quả</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px">
+        <div class="fi"><span class="fi-e">⭐</span><span class="fi-n">Quả Vàng</span><span class="fi-d" style="color:#ffd700">+3đ &amp; slow-mo</span></div>
+        <div class="fi"><span class="fi-e">🎃</span><span class="fi-n">Boss</span><span class="fi-d" style="color:#ff9020">3 lần chém · +5đ</span></div>
+        <div class="fi"><span class="fi-e">🔗</span><span class="fi-n">Chain</span><span class="fi-d" style="color:#ffdd00">Tự chém quả gần</span></div>
+        <div class="fi"><span class="fi-e">🎯</span><span class="fi-n">Nam Châm</span><span class="fi-d" style="color:#90c8e0">Hút quả lại 4s</span></div>
+        <div class="fi"><span class="fi-e">🔥</span><span class="fi-n">Chuỗi ×2</span><span class="fi-d" style="color:#ffaa22">Không miss 15s</span></div>
+        <div class="fi"><span class="fi-e">💣</span><span class="fi-n">Bom</span><span class="fi-d" style="color:#ff5577">Mất 1 mạng</span></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button id="startBtn"      class="sbtn sbtn-primary">📷 Dùng Camera</button>
+        <button id="startNoCamBtn" class="sbtn sbtn-ghost">🖱️ Không Camera</button>
+      </div>
+      <button id="startTimeBtn" class="sbtn sbtn-gold" style="margin-top:8px;width:100%">⏱ Tấn Công Thời Gian — 60 giây</button>
+    </div>
+  </div>
+
+<script type="module">
+// MediaPipe loaded dynamically inside init() so script always runs even without internet
+
+// DOM
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+const video = document.getElementById('webcam');
+const statusEl = document.getElementById('status');
+const startOverlay = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const restartBtn    = document.getElementById('restartBtn');
+const pauseBtn      = document.getElementById('pauseBtn');
+const splitBtn      = document.getElementById('splitBtn');
+const soundBtn      = document.getElementById('soundBtn');
+const homeBtn       = document.getElementById('homeBtn');
+const speedSelect   = document.getElementById('speedSelect');
+const menuBtn       = document.getElementById('menuBtn');
+const menuPanel     = document.getElementById('menuPanel');
+
+menuBtn.onclick = e => { e.stopPropagation(); menuPanel.classList.toggle('open'); };
+document.addEventListener('click', () => menuPanel.classList.remove('open'));
+menuPanel.addEventListener('click', e => e.stopPropagation());
+
+// Canvas responsive
+let W = 0;
+let H = 0;
+let DPR = 1;
+function resizeGame() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.floor(window.innerWidth);
+  H = Math.floor(window.innerHeight);
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+resizeGame();
+window.addEventListener('resize', resizeGame);
+document.addEventListener('fullscreenchange', () => {
+  fullscreenBtn.textContent = document.fullscreenElement ? '❎ Exit' : '⛶ Full';
+  resizeGame();
+});
+
+// Mobile/fullscreen support
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (!document.documentElement.requestFullscreen || isIOS) {
+  // iOS Safari không cho fullscreen toàn document, nên ẩn nút để tránh bấm không có tác dụng.
+  fullscreenBtn.style.display = 'none';
+}
+
+// Game config
+const MAX_LIVES = 5;
+const WIN_SCORE = 80;
+const TRAIL_LEN_PC     = 32;
+const TRAIL_LEN_MOBILE = 22;
+const BASE_INTERVAL = 1500;
+const GRAVITY_BASE = 0.34;
+const MAX_OBJECTS    = 9;
+const MAX_PARTICLES  = 140;
+const IS_MOBILE = matchMedia('(pointer: coarse)').matches || innerWidth < 760;
+const TARGET_FPS = IS_MOBILE ? 30 : 60;
+const DETECT_EVERY_MS = IS_MOBILE ? 80 : 33;
+
+const FRUITS = [
+  { type:'fruit', name:'watermelon', label:'🍉', color:'#22aa22', inner:'#ff4466', r:42, points:1 },
+  { type:'fruit', name:'orange',     label:'🍊', color:'#ff8800', inner:'#ffaa44', r:32, points:1 },
+  { type:'fruit', name:'apple',      label:'🍎', color:'#cc2222', inner:'#ff6666', r:30, points:1 },
+  { type:'fruit', name:'banana',     label:'🍌', color:'#ddcc00', inner:'#ffee44', r:28, points:1 },
+  { type:'fruit', name:'strawberry', label:'🍓', color:'#cc2244', inner:'#ff6688', r:24, points:1 },
+  { type:'fruit', name:'grape',      label:'🍇', color:'#882299', inner:'#bb55cc', r:24, points:1 },
+];
+
+const ITEMS = [
+  { type:'item', name:'star',   label:'⭐', color:'#ffd700', inner:'#fff2a0', r:28 },
+  { type:'item', name:'life',   label:'❤️', color:'#ff3355', inner:'#ff9aaa', r:28 },
+  { type:'item', name:'boost',  label:'⚡', color:'#ffaa00', inner:'#ffe080', r:28 },
+  { type:'item', name:'freeze', label:'❄️', color:'#44d9ff', inner:'#c9f7ff', r:28 },
+  { type:'item', name:'shield', label:'🛡️', color:'#778899', inner:'#aabbcc', r:28 },
+];
+
+const BOMB = { type:'bomb', name:'bomb', label:'💣', color:'#1b1b1b', inner:'#555', r:30 };
+const BOSS_BASE = { type:'boss', name:'boss', label:'🎃', color:'#e06000', inner:'#ff9020', r:62, points:5 };
+
+// Magnet item
+ITEMS.push({ type:'item', name:'magnet', label:'🧲', color:'#607080', inner:'#90b0c0', r:28 });
+
+// State
+let handLandmarker = null;
+let lastVideoTime = -1;
+let lastDetectMs = 0;
+let lastFrameMs = 0;
+let objects = [];
+let particles = [];
+let trail = [];
+let fingertip = null;
+let score = 0;
+let highScore = Number(localStorage.getItem('fruit_ninja_high_score') || 0);
+let lives = MAX_LIVES;
+let gameOver = false;
+let paused = false;
+let lastSpawn = 0;
+let flashRed = 0;
+let shakeFrames = 0;
+let comboCount = 0;
+let comboTime = 0;
+let gameSpeed = 1;
+let boostUntil  = 0;
+let slowUntil   = 0;
+let magnetUntil = 0;
+let hasShield   = false;
+let splitMode   = false;
+// Time Attack
+let gameMode    = 'classic'; // 'classic' | 'timeattack'
+let timeLeft    = 60;
+// Streak multiplier
+let noMissSince = 0;   // timestamp of last miss (or game start)
+let streakActive = false;
+// Chain slash
+let chainCount  = 0;
+let chainTime   = 0;
+let cameraZoom  = 1.0;
+let countdown   = -1;  // 3→2→1→0(GO)→-1(playing)
+let countdownAt = 0;   // timestamp khi số hiện tại bắt đầu
+let soundOn     = true;
+let halves      = [];
+let fingertips  = []; // all detected hand tips (single mode)
+let trail2      = []; // trail for second hand (single mode)
+// ── Per-player state (split mode) ──────────────────────────────────────
+function makeP(side) {
+  return { side, score:0, lives:MAX_LIVES, over:false,
+    objects:[], parts:[], halves:[], trail:[], tip:null,
+    combo:0, comboT:0, shield:false, boostUntil:0, slowUntil:0,
+    lastSpawn:performance.now(), flashRed:0, shakeFrames:0, noHand:0,
+    hi: Number(localStorage.getItem('fn_p'+side+'_hi')||0) };
+}
+let SP = null; // [p0,p1] in split mode
+
+let audioCtx      = null;
+let noHandFrames  = 0;
+let initialized   = false;
+let running       = false;
+let debugMode     = false;
+let mpSource      = '—';      // 'local' | 'cdn' | 'failed'
+let modelSource   = '—';      // 'local' | 'cdn'
+let lastHandCount = 0;
+let fpsSmooth     = 0;
+let lastFpsTime   = 0;
+
+speedSelect.addEventListener('change', () => {
+  gameSpeed = Number(speedSelect.value || 1);
+});
+
+function rand(min, max) { return min + Math.random() * (max - min); }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function nowMs() { return performance.now(); }
+
+function lighten(hex, amt) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;
+}
+
+// ── Fruit body cache (draw once → reuse via drawImage) ──────────────────
+const _fruitCache = new Map();
+function getFruitCanvas(color, r, type) {
+  const key = `${color}_${r}_${type}`;
+  if (_fruitCache.has(key)) return _fruitCache.get(key);
+  const pad = 3, sz = (r + pad) * 2;
+  let oc;
+  try { oc = new OffscreenCanvas(sz, sz); }
+  catch { oc = Object.assign(document.createElement('canvas'), {width:sz, height:sz}); }
+  const c = oc.getContext('2d');
+  c.translate(r + pad, r + pad);
+  const g = c.createRadialGradient(-r*.33, -r*.33, 2, 0, 0, r);
+  g.addColorStop(0, lighten(color, 72));
+  g.addColorStop(1, color);
+  c.beginPath(); c.arc(0, 0, r, 0, Math.PI*2);
+  c.fillStyle = g; c.fill();
+  c.lineWidth = Math.max(2, r*.06);
+  c.strokeStyle = type === 'bomb' ? 'rgba(255,80,80,.65)' : 'rgba(255,255,255,.42)';
+  c.stroke();
+  const entry = { canvas: oc, pad };
+  _fruitCache.set(key, entry);
+  return entry;
+}
+
+// Trail color functions (cached, not recreated each frame)
+const TRAIL_CLR_P0 = (t,a) => `rgba(${80+t*140|0},${180+t*60|0},255,${t*a})`;
+const TRAIL_CLR_P1 = (t,a) => `rgba(255,${140+t*80|0},${t*100|0},${t*a})`;
+
+// ── Audio ──────────────────────────────────────────────────────────────
+function getAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// Sound buffer cache
+const SFX = {};
+async function loadSFX(name, url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const ab  = await res.arrayBuffer();
+    SFX[name] = await getAC().decodeAudioData(ab);
+  } catch(e) {}
+}
+function playFile(names, vol = 1) {
+  if (!soundOn) return;
+  try {
+    const name = Array.isArray(names) ? names[Math.random()*names.length|0] : names;
+    const buf  = SFX[name];
+    if (!buf) return false;
+    const ac  = getAC();
+    const src = ac.createBufferSource();
+    const g   = ac.createGain();
+    src.buffer = buf;
+    g.gain.value = vol;
+    src.connect(g); g.connect(ac.destination);
+    src.start();
+    return true;
+  } catch(e) { return false; }
+}
+
+// Preload sounds (background, non-blocking)
+async function preloadSounds() {
+  const base = './sounds/';
+  const loads = [
+    ['swipe1','Sword-swipe-1.wav'],['swipe2','Sword-swipe-2.wav'],
+    ['swipe3','Sword-swipe-3.wav'],['swipe4','Sword-swipe-4.wav'],
+    ['swipe5','Sword-swipe-5.wav'],['swipe6','Sword-swipe-6.wav'],
+    ['swipe7','Sword-swipe-7.wav'],
+    ['splat1','Splatter-Medium-1.wav'],['splat2','Splatter-Medium-2.wav'],
+    ['boom',  'Bomb-explode.wav'],
+    ['item',  'powerup-starfruit.wav'],
+    ['combo1','combo-1.wav'],['combo2','combo-2.wav'],['combo3','combo-3.wav'],
+    ['combo4','combo-4.wav'],['combo5','combo-5.wav'],
+    ['gameover','Game-over.wav'],
+    ['timebeep','time-beep.wav'],['timeup','time-up.wav'],
+  ];
+  await Promise.all(loads.map(([k,f]) => loadSFX(k, base+f)));
+}
+const SWIPE_KEYS = ['swipe1','swipe2','swipe3','swipe4','swipe5','swipe6','swipe7'];
+
+function playSwoosh() {
+  if (!soundOn) return;
+  // Thử file thật trước, fallback synthesize
+  if (playFile(SWIPE_KEYS, 0.7)) return;
+  try {
+    const ac = getAC(), t = ac.currentTime;
+    const osc = ac.createOscillator(), g = ac.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(700, t);
+    osc.frequency.exponentialRampToValueAtTime(140, t + 0.13);
+    g.gain.setValueAtTime(0.18, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(t); osc.stop(t + 0.15);
+  } catch(e) {}
+}
+
+function playSlice() {
+  // Tiếng quả bể (thêm vào sau swoosh)
+  playFile(['splat1','splat2'], 0.5);
+}
+
+function playBoom() {
+  if (!soundOn) return;
+  if (playFile('boom', 0.8)) return;
+  try {
+    const ac = getAC(), t = ac.currentTime;
+    const len = Math.floor(ac.sampleRate * 0.32);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 1.4);
+    const src = ac.createBufferSource(), g1 = ac.createGain();
+    src.buffer = buf;
+    g1.gain.setValueAtTime(0.55, t); g1.gain.exponentialRampToValueAtTime(0.001, t+0.32);
+    src.connect(g1); g1.connect(ac.destination); src.start(t);
+    const osc = ac.createOscillator(), g2 = ac.createGain();
+    osc.frequency.setValueAtTime(85, t); osc.frequency.exponentialRampToValueAtTime(26, t+0.22);
+    g2.gain.setValueAtTime(0.4, t); g2.gain.exponentialRampToValueAtTime(0.001, t+0.26);
+    osc.connect(g2); g2.connect(ac.destination); osc.start(t); osc.stop(t+0.26);
+  } catch(e) {}
+}
+
+function playItem() {
+  if (!soundOn) return;
+  if (playFile('item', 0.7)) return;
+  try {
+    const ac = getAC();
+    [440, 660, 880].forEach((f, i) => {
+      const t = ac.currentTime + i*0.07;
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.frequency.value = f;
+      g.gain.setValueAtTime(0.14, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.1);
+      osc.connect(g); g.connect(ac.destination); osc.start(t); osc.stop(t+0.1);
+    });
+  } catch(e) {}
+}
+
+function playCombo(count) {
+  if (!soundOn) return;
+  const key = `combo${Math.min(count, 5)}`;
+  playFile(key, 0.8);
+}
+
+function playGameOver() { playFile('gameover', 0.8); }
+function playTimeBeep() { playFile('timebeep', 0.6); }
+function playTimeUp()   { playFile('timeup', 0.9); }
+
+// ── Half-fruit (slice animation) ────────────────────────────────────────
+class HalfFruit {
+  constructor(x, y, info, side) {
+    this.x = x; this.y = y;
+    this.color = info.color; this.inner = info.inner; this.r = info.r;
+    this.vx = side * rand(2.5, 6);
+    this.vy = -rand(2, 5);
+    this.rot = rand(0, 180);
+    this.rspd = side * rand(4, 10);
+    this.life = 1.0;
+  }
+  update(dt) {
+    const k = dt / 16.67;
+    this.vy += 0.42 * k; this.x += this.vx * k; this.y += this.vy * k; this.rot += this.rspd * k;
+    this.life -= 0.022 * k;
+    return this.life > 0 && this.y < H + 120;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot * Math.PI / 180);
+    // Half circle
+    ctx.beginPath(); ctx.arc(0, 0, this.r, Math.PI, 0); ctx.closePath();
+    const grad = ctx.createRadialGradient(-this.r*.3, -this.r*.3, 1, 0, 0, this.r);
+    grad.addColorStop(0, lighten(this.color, 60)); grad.addColorStop(1, this.color);
+    ctx.fillStyle = grad; ctx.fill();
+    // Flesh
+    if (this.inner) {
+      ctx.beginPath(); ctx.arc(0, 0, this.r * 0.58, Math.PI, 0); ctx.closePath();
+      ctx.fillStyle = this.inner; ctx.fill();
+    }
+    // Cut line
+    ctx.beginPath(); ctx.moveTo(-this.r, 0); ctx.lineTo(this.r, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+class Particle {
+  constructor(x, y, color, power = 1) {
+    const a = Math.random() * Math.PI * 2;
+    const s = rand(2.5, 8.5) * power;
+    this.x = x;
+    this.y = y;
+    this.vx = Math.cos(a) * s;
+    this.vy = Math.sin(a) * s - rand(1, 3);
+    this.color = color;
+    this.life = 1;
+    this.r = rand(2, 6);
+  }
+  update(dt) {
+    const k = dt / 16.67;
+    this.x += this.vx * k;
+    this.y += this.vy * k;
+    this.vy += 0.28 * k;
+    this.life -= 0.032 * k;
+    return this.life > 0;
+  }
+  draw() {
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+class FlyingObject {
+  constructor(pSide = null, pScore = null) {
+    const info = pickObjectInfo(pScore !== null ? pScore : score);
+    Object.assign(this, info);
+    this.r = Math.round(this.r * clamp(Math.min(W, H) / 700, 0.78, 1.35));
+    // Spawn in correct half or full width
+    const xMin = pSide === 0 ? this.r+20 : pSide === 1 ? W/2+this.r+10 : this.r+30;
+    const xMax = pSide === 0 ? W/2-this.r-10 : pSide === 1 ? W-this.r-20 : W-this.r-30;
+    this.x = rand(xMin, xMax);
+    this.y = H + this.r + rand(8, 80);
+    this.vx = rand(-3.8, 3.8) * clamp(W / 1280, .8, 1.35);
+
+    // Bay cao hơn cho màn hình lớn.
+    const heightBoost = clamp(H / 720, 0.9, 1.45);
+    this.vy = -rand(15.0, 20.5) * heightBoost;
+    this.rot = rand(0, 360);
+    this.rspd = rand(-7, 7);
+    this.pSide = pSide;   // null = single mode, 0 = left half, 1 = right half
+    this.sliced = false;
+    this.missed = false;
+  }
+
+  update(dt, pSlowUntil = slowUntil, pMagnetUntil = magnetUntil, pTip = null) {
+    const k = dt / 16.67;
+    // Boss cooldowns
+    if (this.hitCooldown > 0) this.hitCooldown -= k;
+    if (this.hitFlash    > 0) this.hitFlash    -= k;
+    const slowFactor = nowMs() < pSlowUntil ? 0.62 : 1;
+    const spd = gameSpeed * slowFactor;
+    // Magnet: kéo thẳng vào con trỏ, damping để không bay lung tung
+    const tip = pTip || fingertips[0];
+    if (tip && nowMs() < pMagnetUntil && this.type === 'fruit') {
+      const dx = tip.x - this.x, dy = tip.y - this.y;
+      const d  = Math.hypot(dx, dy) || 1;
+      const pull = Math.min(d * 0.28, 22) * k;
+      this.vx = this.vx * 0.72 + (dx/d) * pull;
+      this.vy = this.vy * 0.72 + (dy/d) * pull;
+    }
+    this.vy += GRAVITY_BASE * k * spd;
+    this.x += this.vx * k * spd;
+    this.y += this.vy * k * spd;
+    this.rot += this.rspd * k * spd;
+
+    // Wall + divider bounce
+    const leftWall  = this.pSide === 1 ? W/2 + this.r : this.r;
+    const rightWall = this.pSide === 0 ? W/2 - this.r : W - this.r;
+    if (this.x < leftWall)  { this.x = leftWall;  this.vx = Math.abs(this.vx) * 0.82; }
+    if (this.x > rightWall) { this.x = rightWall; this.vx = -Math.abs(this.vx) * 0.82; }
+
+    if (this.y > H + this.r + 80) {
+      if (!this.sliced) this.missed = true;
+      return false;
+    }
+    return true;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot * Math.PI / 180);
+
+    // Shadow
+    ctx.save();
+    ctx.translate(0, this.r + 5);
+    ctx.scale(1, 0.25);
+    ctx.beginPath();
+    ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.fill();
+    ctx.restore();
+
+    // Golden: viền vàng phát sáng + shimmer
+    if (this.golden) {
+      const pulse = 0.5 + Math.sin(nowMs()*0.009 + (this._phase||0)) * 0.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.r + 5 + pulse * 4, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(255,220,0,${0.4 + pulse*0.5})`;
+      ctx.lineWidth = 3 + pulse * 2;
+      ctx.stroke();
+      ctx.globalAlpha = 0.78 + pulse * 0.22;
+    }
+    // Boss hit flash
+    if (this.hitFlash > 0 && Math.floor(this.hitFlash) % 4 < 2) {
+      ctx.globalAlpha = 0.35;
+    }
+    // Body from cache
+    const { canvas: fc, pad: fp } = getFruitCanvas(this.color, this.r, this.type);
+    ctx.drawImage(fc, -(this.r + fp), -(this.r + fp));
+    ctx.globalAlpha = 1;
+
+    // Boss HP indicator
+    if (this.type === 'boss' && this.hp > 1) {
+      ctx.font = `bold ${this.r * 0.5}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff'; ctx.fillText('❤'.repeat(this.hp - 1), 0, -this.r - 10);
+    }
+
+    // Label
+    ctx.font = `${this.r * 1.08}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.label, 0, 2);
+
+    ctx.restore();
+  }
+
+  hitTest(point) {
+    if (this.sliced || !point) return false;
+    if (this.hitCooldown > 0) return false;
+    const base  = IS_MOBILE ? 2.8 : 2.4;
+    const bonus = base * (lives <= 2 ? 1.3 : 1);
+    return Math.hypot(this.x - point.x, this.y - point.y) < this.r * bonus;
+  }
+}
+
+function pickObjectInfo(sc = score) {
+  const r = Math.random();
+  const bossChance = sc >= 15 ? 0.025 : 0;
+  const bombChance = clamp(0.10 + sc * 0.0018, 0.10, 0.22);
+  const itemChance = 0.12;
+  if (r < bossChance) return { ...BOSS_BASE, hp:3, hitCooldown:0, hitFlash:0 };
+  if (r < bossChance + bombChance) return BOMB;
+  if (r < bossChance + bombChance + itemChance) return ITEMS[Math.floor(Math.random() * ITEMS.length)];
+  const fruit = { ...FRUITS[Math.floor(Math.random() * FRUITS.length)] };
+  // 18% chance golden upgrade
+  if (Math.random() < 0.18) {
+    fruit.golden = true;
+    fruit.color  = '#ffd700';
+    fruit.inner  = '#fff080';
+    fruit.label  = '✨';
+    fruit.points = (fruit.points || 1) + 2;
+    fruit._phase = Math.random() * Math.PI * 2;
+  }
+  return fruit;
+}
+
+function addParticles(obj, count = 24, power = 1) {
+  const n = Math.min(count, MAX_PARTICLES - particles.length);
+  for (let i = 0; i < n; i++) particles.push(new Particle(obj.x, obj.y, obj.color, power));
+  if (obj.inner) { const n2 = Math.min(n>>1, MAX_PARTICLES - particles.length); for (let i=0;i<n2;i++) particles.push(new Particle(obj.x, obj.y, obj.inner, power)); }
+}
+
+function spawnInterval() {
+  const slowFactor = nowMs() < slowUntil ? 1.4 : 1;
+  return clamp((BASE_INTERVAL - score * 7) * slowFactor / gameSpeed, 440, 1300);
+}
+
+function maybeSpawn(t) {
+  if (objects.length >= MAX_OBJECTS) return;
+  if (t - lastSpawn > spawnInterval()) {
+    const batch = Math.random() < clamp(score / 120, .10, .45) ? Math.floor(rand(2, 4)) : 1;
+    for (let i = 0; i < batch && objects.length < MAX_OBJECTS; i++) objects.push(new FlyingObject());
+    lastSpawn = t;
+  }
+}
+
+// Returns true = remove object, false = keep alive
+function damageObject(obj) {
+  if (obj.type === 'boss' && obj.hp > 1) {
+    obj.hp--;
+    const newR = Math.round(obj.r * 0.78);
+    _fruitCache.delete(`${obj.color}_${obj.r}_${obj.type}`);
+    obj.r = newR;
+    obj.hitCooldown = 22;
+    obj.hitFlash    = 14;
+    addParticles(obj, 10, 0.8);
+    playSwoosh();
+    comboCount++; comboTime = nowMs();
+    score++;
+    return false; // still alive — keep in objects array
+  }
+  sliceObject(obj);
+  return true; // sliced — remove from objects array
+}
+
+function tryChain(x, y, depth) {
+  if (depth >= 3) return;
+  let nearest = null, best = 130;
+  for (const o of objects) {
+    if (o.sliced || o.type === 'bomb') continue; // bỏ qua bomb
+    const d = Math.hypot(o.x-x, o.y-y);
+    if (d < best) { nearest = o; best = d; }
+  }
+  if (!nearest) return;
+  chainCount++;
+  chainTime = nowMs();
+  const died = damageObject(nearest); // boss trừ HP, không kill ngay
+  if (died) tryChain(nearest.x, nearest.y, depth+1); // chỉ chain tiếp nếu object đã nổ
+}
+
+function sliceObject(obj) {
+  obj.sliced = true;
+  comboCount++;
+  comboTime = nowMs();
+  if (comboCount >= 3) playCombo(comboCount);
+
+  if (obj.type === 'bomb') {
+    if (hasShield) {
+      hasShield = false; flashRed = 8;
+      addParticles(obj, 16, 1); playItem();
+    } else {
+      lives--; comboCount = 0; flashRed = 20; shakeFrames = 18;
+      addParticles(obj, 28, 1.25); playBoom();
+      noMissSince = nowMs(); streakActive = false;
+      if (lives <= 0) endGame();
+    }
+    return;
+  }
+
+  if (obj.type === 'item') {
+    if (obj.name === 'star')        score += 5;
+    else if (obj.name === 'life')   lives = Math.min(MAX_LIVES + 2, lives + 1);
+    else if (obj.name === 'boost')  boostUntil  = nowMs() + 10000;
+    else if (obj.name === 'freeze') slowUntil   = nowMs() + 5000;
+    else if (obj.name === 'shield') hasShield   = true;
+    else if (obj.name === 'magnet') magnetUntil = nowMs() + 4000;
+    addParticles(obj, 34, 1.2); playItem();
+    return;
+  }
+
+  // Fruit / boss kill
+  const streak   = streakActive ? 2 : 1;
+  const comboBonus = comboCount >= 5 ? 2 : comboCount >= 3 ? 1 : 0;
+  score += (obj.points + comboBonus) * streak;
+  addParticles(obj, 24, 1); playSwoosh(); playSlice();
+  halves.push(new HalfFruit(obj.x, obj.y, obj, -1));
+  halves.push(new HalfFruit(obj.x, obj.y, obj,  1));
+
+  // Golden → slow-mo 1s
+  if (obj.golden) slowUntil = Math.max(slowUntil, nowMs() + 1000);
+
+  // Chain slash
+  tryChain(obj.x, obj.y, 0);
+}
+
+function endGame() {
+  gameOver = true;
+  playGameOver();
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('fruit_ninja_high_score', String(highScore));
+  }
+}
+
+function resetGame() {
+  objects = []; particles = []; halves = [];
+  trail = []; trail2 = []; fingertip = null; fingertips = [];
+  score = 0; lives = MAX_LIVES; gameOver = false; paused = false;
+  flashRed = 0; shakeFrames = 0; comboCount = 0; comboTime = 0;
+  boostUntil = 0; slowUntil = 0; magnetUntil = 0; hasShield = false;
+  timeLeft = 60; noMissSince = nowMs(); streakActive = false;
+  chainCount = 0; chainTime = 0;
+  countdown = 3; countdownAt = nowMs();
+  lastSpawn = nowMs();
+  pauseBtn.textContent = '⏸ Pause';
+  if (SP) SP = [makeP(0), makeP(1)];
+}
+
+function toggleSplit() {
+  splitMode = !splitMode;
+  splitBtn.textContent = splitMode ? '⚔ 2 Người BẬT' : '⚔ 2 Người';
+  splitBtn.style.background = splitMode ? 'rgba(255,140,0,.9)' : '';
+  if (splitMode) {
+    SP = [makeP(0), makeP(1)];
+    objects = []; particles = []; halves = []; // clear single-player objects
+  } else {
+    SP = null;
+  }
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  soundBtn.textContent = soundOn ? '🔊 Âm thanh' : '🔇 Tắt tiếng';
+}
+
+function togglePause() {
+  if (gameOver) return;
+  paused = !paused;
+  pauseBtn.textContent = paused ? '▶ Tiếp tục' : '⏸ Tạm dừng';
+}
+
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  } catch (e) {
+    statusEl.textContent = 'Trình duyệt không hỗ trợ fullscreen cho trang này.';
+  }
+}
+
+function goHome() {
+  running = false; paused = false; gameOver = false;
+  objects = []; particles = []; halves = [];
+  trail = []; trail2 = []; fingertip = null; fingertips = [];
+  SP = null; gameMode = 'classic'; countdown = -1;
+  // Stop camera stream so next init can pick mode freely
+  noHandFrames = 0;
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+  handLandmarker = null;
+  initialized = false;
+  // Reset start button về trạng thái ban đầu
+  startBtn.disabled = false;
+  startBtn.textContent = '📷 Dùng Camera';
+  startOverlay.style.display = 'flex';
+  menuPanel.classList.remove('open');
+}
+
+function toggleDebug() { debugMode = !debugMode; document.getElementById('debugBtn').classList.toggle('active', debugMode); menuPanel.classList.remove('open'); }
+
+window.setCamZoom = function(dir) {
+  const steps = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0];
+  const idx = steps.indexOf(cameraZoom);
+  const next = Math.max(0, Math.min(steps.length-1, idx + dir));
+  cameraZoom = steps[next];
+  document.getElementById('zoomLabel').textContent = cameraZoom.toFixed(2).replace(/\.?0+$/, '') + '×';
+};
+
+fullscreenBtn.onclick = () => { toggleFullscreen(); menuPanel.classList.remove('open'); };
+restartBtn.onclick    = () => { resetGame();        menuPanel.classList.remove('open'); };
+pauseBtn.onclick      = () => { togglePause();      menuPanel.classList.remove('open'); };
+splitBtn.onclick      = () => { toggleSplit();      menuPanel.classList.remove('open'); };
+soundBtn.onclick      = () => { toggleSound();      menuPanel.classList.remove('open'); };
+homeBtn.onclick       = goHome;
+document.getElementById('debugBtn').onclick = toggleDebug;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') resetGame();
+  if (e.key === 'p' || e.key === 'P' || e.code === 'Space') togglePause();
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'v' || e.key === 'V') toggleSplit();
+  if (e.key === 'm' || e.key === 'M') toggleSound();
+  if (e.key === 'd' || e.key === 'D') toggleDebug();
+  if (e.key === 'q' || e.key === 'Q' || e.key === 'Escape') {
+    if (document.fullscreenElement) document.exitFullscreen();
+  }
+});
+
+function updatePointer(x, y) {
+  if (!running || paused || gameOver) return;
+  // Camera mode → chỉ tắt chuột, touch vẫn chạy (xem bên dưới)
+  if (handLandmarker && !_fromTouch) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (x - rect.left) * (W / rect.width);
+  const py = (y - rect.top)  * (H / rect.height);
+  fingertip  = { x: px, y: py };
+  fingertips = [fingertip]; // needed for hitTest in single mode
+  trail.push({ x: px, y: py });
+  const maxTrail = (nowMs() < boostUntil ? 2 : 1) * (IS_MOBILE ? TRAIL_LEN_MOBILE : TRAIL_LEN_PC);
+  while (trail.length > maxTrail) trail.shift();
+}
+
+let _fromTouch = false;
+canvas.addEventListener('mousemove', e => { _fromTouch = false; updatePointer(e.clientX, e.clientY); });
+
+function handleRestartTap(cx, cy) {
+  if (!running) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (cx - rect.left) * (W / rect.width);
+  const py = (cy - rect.top)  * (H / rect.height);
+
+  // Split mode: restart player bên nào bấm
+  if (SP) {
+    if (!SP[0].over || !SP[1].over) return;
+    const bw = 220, bh = 52, bx = W/2 - bw/2, by = H/2 + 62;
+    if (px >= bx && px <= bx+bw && py >= by && py <= by+bh) {
+      SP = [makeP(0), makeP(1)];
+    }
+    return;
+  }
+
+  // Single mode
+  if (!gameOver) return;
+  const btnW = Math.min(Math.max(W/3, 160), 280), btnH = 52;
+  const btnX = W/2 - btnW/2, btnY = H/2 + 60;
+  if (px >= btnX && px <= btnX+btnW && py >= btnY && py <= btnY+btnH) {
+    resetGame();
+  }
+}
+canvas.addEventListener('click',    e => handleRestartTap(e.clientX, e.clientY));
+canvas.addEventListener('touchend', e => {
+  if (SP) {
+    // Cập nhật lại tip + trail theo ngón còn chạm
+    SP[0].tip = null; SP[1].tip = null;
+    for (const touch of e.touches) {
+      const rect = canvas.getBoundingClientRect();
+      const px = (touch.clientX - rect.left) * (W / rect.width);
+      const p = SP[px < W/2 ? 0 : 1];
+      p.tip = { x: px, y: (touch.clientY - rect.top) * (H / rect.height) };
+    }
+    // Xóa trail của bên không còn ngón chạm
+    if (!SP[0].tip) SP[0].trail = [];
+    if (!SP[1].tip) SP[1].trail = [];
+    return;
+  }
+  if (e.touches.length === 0) {
+    fingertip = null; trail = []; trail2 = []; fingertips = [];
+  } else {
+    // Còn ngón → cập nhật fingertips, xóa trail2 nếu chỉ còn 1
+    const rect = canvas.getBoundingClientRect();
+    fingertips = Array.from(e.touches).map(t => ({
+      x: (t.clientX - rect.left) * (W / rect.width),
+      y: (t.clientY - rect.top)  * (H / rect.height),
+    }));
+    fingertip = fingertips[0];
+    if (fingertips.length < 2) trail2 = [];
+  }
+  if (e.changedTouches[0]) handleRestartTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+});
+canvas.addEventListener('mouseleave', () => { if (!handLandmarker) { fingertip = null; trail = []; fingertips = []; } });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (SP) {
+    // Split mode: each touch assigned to player by x position
+    const rect = canvas.getBoundingClientRect();
+    SP[0].tip = null; SP[1].tip = null;
+    for (const touch of e.touches) {
+      const px = (touch.clientX - rect.left) * (W / rect.width);
+      const py = (touch.clientY - rect.top)  * (H / rect.height);
+      const p = SP[px < W/2 ? 0 : 1];
+      const maxT = (nowMs() < p.boostUntil ? 2 : 1) * (IS_MOBILE ? TRAIL_LEN_MOBILE : TRAIL_LEN_PC);
+      p.tip = {x:px, y:py};
+      p.trail.push({x:px, y:py});
+      while(p.trail.length > maxT) p.trail.shift();
+    }
+    return;
+  }
+  // Single mode: tất cả ngón đang chạm
+  _fromTouch = true;
+  if (!running || paused || gameOver || countdown >= 0) return;
+  const rect = canvas.getBoundingClientRect();
+  const maxT = (nowMs() < boostUntil ? 2 : 1) * (IS_MOBILE ? TRAIL_LEN_MOBILE : TRAIL_LEN_PC);
+  fingertips = Array.from(e.touches).map(t => ({
+    x: (t.clientX - rect.left) * (W / rect.width),
+    y: (t.clientY - rect.top)  * (H / rect.height),
+  }));
+  if (fingertips.length > 0) {
+    fingertip = fingertips[0];
+    trail.push(fingertip);
+    while (trail.length > maxT) trail.shift();
+  }
+  if (fingertips.length > 1) {
+    trail2.push(fingertips[1]);
+    while (trail2.length > maxT) trail2.shift();
+  }
+}, { passive: false });
+
+function drawBackground() {
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#06122a');
+  bg.addColorStop(.55, '#08081a');
+  bg.addColorStop(1, '#03030b');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Soft decorative glows
+  ctx.globalAlpha = .22;
+  ctx.fillStyle = '#00e5ff';
+  ctx.beginPath();
+  ctx.arc(W * .15, H * .2, Math.min(W, H) * .22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#00ff88';
+  ctx.beginPath();
+  ctx.arc(W * .88, H * .78, Math.min(W, H) * .18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawCamera() {
+  if (video.readyState >= 2) {
+    ctx.save();
+    ctx.scale(-1, 1);
+    if (cameraZoom === 1.0) {
+      ctx.drawImage(video, -W, 0, W, H);
+    } else {
+      // Crop trung tâm video rồi scale lên canvas
+      const vw = video.videoWidth  || W;
+      const vh = video.videoHeight || H;
+      const srcW = vw / cameraZoom;
+      const srcH = vh / cameraZoom;
+      const srcX = (vw - srcW) / 2;
+      const srcY = (vh - srcH) / 2;
+      ctx.drawImage(video, srcX, srcY, srcW, srcH, -W, 0, W, H);
+    }
+    ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,18,.48)';
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    drawBackground();
+  }
+}
+
+function drawTrail() {
+  if (trail.length < 2) return;
+  ctx.save();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  // Glow: wide + transparent (no shadowBlur — expensive on mobile GPU)
+  for (let i = 1; i < trail.length; i++) {
+    const t = i / trail.length;
+    ctx.beginPath();
+    ctx.moveTo(trail[i-1].x, trail[i-1].y);
+    ctx.lineTo(trail[i].x,   trail[i].y);
+    ctx.strokeStyle = `rgba(120,220,255,${t * 0.28})`;
+    ctx.lineWidth = Math.max(4, t * (IS_MOBILE ? 26 : 20));
+    ctx.stroke();
+  }
+  // Core: thin + opaque
+  for (let i = 1; i < trail.length; i++) {
+    const t = i / trail.length;
+    ctx.beginPath();
+    ctx.moveTo(trail[i-1].x, trail[i-1].y);
+    ctx.lineTo(trail[i].x,   trail[i].y);
+    ctx.strokeStyle = `rgba(${80+t*140|0},${180+t*60|0},255,${t*0.92})`;
+    ctx.lineWidth = Math.max(2, t * (IS_MOBILE ? 9 : 7));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFingertip() {
+  if (!fingertip) return;
+  const scale  = lives <= 2 ? 1.3 : 1;
+  const outerR = (IS_MOBILE ? 20 : 18) * scale;
+  const innerR = (IS_MOBILE ? 11 : 9)  * scale;
+  const colors = [
+    lives <= 2 ? 'rgba(255,120,80,.92)' : 'rgba(80,230,255,.92)', // hand 1: blue/red
+    'rgba(200,100,255,.92)',                                        // hand 2: purple
+  ];
+  fingertips.forEach((tip, i) => {
+    ctx.beginPath(); ctx.arc(tip.x, tip.y, outerR, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(tip.x, tip.y, innerR, 0, Math.PI*2);
+    ctx.fillStyle = colors[i] || colors[1]; ctx.fill();
+  });
+}
+
+function drawHUD() {
+  const pad = IS_MOBILE ? 12 : 18;
+  const scoreSize = clamp(W / 32, 25, 48);
+
+  ctx.save();
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.font = `900 ${scoreSize}px Arial`;
+  ctx.lineWidth = Math.max(4, scoreSize * .13);
+  ctx.strokeStyle = 'rgba(0,0,0,.78)';
+  ctx.fillStyle = '#ffffff';
+  const scoreText = `SCORE ${score}`;
+  ctx.strokeText(scoreText, pad, IS_MOBILE ? 52 : 65);
+  ctx.fillText(scoreText, pad, IS_MOBILE ? 52 : 65);
+
+  ctx.font = `700 ${Math.max(14, scoreSize * .38)}px Arial`;
+  ctx.fillStyle = '#b8f9ff';
+  const baseY = (IS_MOBILE ? 52 : 65) + scoreSize;
+  ctx.fillText(`KỶ LỤC ${highScore}`, pad + 2, baseY + 4);
+
+  // Time Attack countdown — big center display
+  if (gameMode === 'timeattack') {
+    const tl = Math.max(0, Math.ceil(timeLeft));
+    const sz2 = clamp(W/14, 48, 88);
+    ctx.font = `900 ${sz2}px Arial`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = tl <= 10 ? (Math.floor(nowMs()/250)%2===0 ? '#ff4444' : '#ff9999') : '#ffffff';
+    ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = sz2*.12;
+    ctx.strokeText(`${tl}`, W/2, 10);
+    ctx.fillText(`${tl}`, W/2, 10);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  }
+
+  let timerLine = baseY + 26;
+  if (hasShield) { ctx.fillStyle='#aabbff'; ctx.fillText('🛡️ Shield', pad+2, timerLine); timerLine+=20; }
+  if (nowMs()<boostUntil) { ctx.fillStyle='#ffcc00'; ctx.fillText(`⚡ ${Math.ceil((boostUntil-nowMs())/1000)}s`, pad+2, timerLine); timerLine+=20; }
+  if (nowMs()<slowUntil)  { ctx.fillStyle='#8eeeff'; ctx.fillText(`❄️ ${Math.ceil((slowUntil-nowMs())/1000)}s`,  pad+2, timerLine); timerLine+=20; }
+  if (nowMs()<magnetUntil){ ctx.fillStyle='#aabbcc'; ctx.fillText(`🧲 ${Math.ceil((magnetUntil-nowMs())/1000)}s`,pad+2, timerLine); timerLine+=20; }
+  if (streakActive)       { ctx.fillStyle='#ffee44'; ctx.fillText('🔥 Streak ×2', pad+2, timerLine); }
+
+  // Lives (hidden in time attack)
+  if (gameMode !== 'timeattack') {
+    ctx.textBaseline = 'middle';
+    ctx.font = `${IS_MOBILE ? 24 : 32}px serif`;
+    const lifeY = IS_MOBILE ? 40 : 38;
+    const lifeStep = IS_MOBILE ? 28 : 38;
+    const lifeRightEdge = W - pad;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.fillStyle = i < lives ? '#ff3355' : 'rgba(255,255,255,.22)';
+      ctx.textAlign = 'right';
+      ctx.fillText('♥', lifeRightEdge - i * lifeStep, lifeY);
+    }
+  }
+
+  // Chain label
+  if (chainCount > 0 && nowMs() - chainTime < 800) {
+    const age = (nowMs()-chainTime)/800;
+    ctx.save(); ctx.globalAlpha = 1-age;
+    ctx.font=`900 ${clamp(W/16,36,64)}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#ffdd00'; ctx.fillText(`⛓ CHAIN ×${chainCount+1}!`, W/2, H/2-100);
+    ctx.restore(); ctx.textAlign='left';
+  }
+
+  // Combo
+  if (comboCount >= 3 && nowMs() - comboTime < 900) {
+    const age = (nowMs() - comboTime) / 900;
+    ctx.globalAlpha = 1 - age;
+    ctx.font = `900 ${clamp(W / 18, 42, 76) - age*10}px Arial`;
+    ctx.fillStyle = '#00eeff';
+    ctx.shadowColor = '#00eeff';
+    ctx.shadowBlur = 28;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`COMBO ×${comboCount}!`, W / 2, H / 2 - 70);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  // Footer
+  ctx.textBaseline = 'bottom';
+  ctx.font = `${IS_MOBILE ? 11 : 13}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,.48)';
+  ctx.textAlign = 'left';
+  ctx.fillText('☰ Menu  |  R Chơi lại  |  Space Dừng', 10, H - 10);
+  ctx.textAlign = 'right';
+  ctx.fillText('Made by Dang Duc Minh', W - 10, H - 10);
+  ctx.restore();
+}
+
+function drawGameOver() {
+  ctx.fillStyle = 'rgba(0,0,0,.64)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${clamp(W/12, 48, 92)}px Arial`;
+  ctx.fillStyle = '#ff3355';
+  ctx.shadowColor = '#ff3355';
+  ctx.shadowBlur = 28;
+  ctx.fillText('😵 GAME OVER', W/2, H/2 - 54);
+
+  ctx.shadowBlur = 0;
+  ctx.font = `800 ${clamp(W/32, 24, 42)}px Arial`;
+  ctx.fillStyle = '#fff';
+  ctx.fillText(`Score: ${score}   |   Best: ${highScore}`, W/2, H/2 + 18);
+
+  // Nút Chơi lại bấm được
+  const btnW = clamp(W/3, 160, 280), btnH = 52, btnY = H/2 + 60;
+  const btnX = W/2 - btnW/2;
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(btnX, btnY, btnW, btnH, 999)
+                : ctx.rect(btnX, btnY, btnW, btnH);
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.font = `700 ${clamp(W/40, 16, 22)}px Arial`;
+  ctx.fillStyle = '#fff';
+  ctx.fillText('🔄 Chơi lại', W/2, btnY + btnH/2 + 1);
+
+  ctx.font = `500 ${clamp(W/70, 12, 16)}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('hoặc nhấn R', W/2, btnY + btnH + 20);
+  ctx.restore();
+}
+
+function drawDebug() {
+  const lines = [
+    `FPS:      ${fpsSmooth.toFixed(0)}`,
+    `MP lib:   ${mpSource}`,
+    `Model:    ${modelSource}`,
+    `Hands:    ${lastHandCount} ${handLandmarker ? '✓' : '✗ (not loaded)'}`,
+    `Camera:   ${video.readyState >= 2 ? `${video.videoWidth}×${video.videoHeight}` : 'off'}`,
+    `Delegate: ${handLandmarker ? 'GPU→CPU' : '—'}`,
+    `Split:    ${splitMode ? 'ON' : 'off'}`,
+    ...(mpSource.includes('failed') ? [
+      ``,
+      `FIX: Chay tren may tinh:`,
+      `setup-mediapipe.bat`,
+    ] : []),
+  ];
+  const pad = 10, lh = 19, boxW = 210, boxH = lines.length * lh + 16;
+  const bx = W - boxW - pad, by = 60;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(bx, by, boxW, boxH, 8) : ctx.rect(bx, by, boxW, boxH);
+  ctx.fill();
+  ctx.font = '12px monospace';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  lines.forEach((l, i) => {
+    const isOk = l.includes('✓') || l.includes('local') || (l.includes('Hands:') && lastHandCount > 0);
+    const isErr = l.includes('✗') || l.includes('failed');
+    ctx.fillStyle = isOk ? '#00ff88' : isErr ? '#ff4466' : '#ccddff';
+    ctx.fillText(l, bx + 10, by + 8 + i * lh);
+  });
+  ctx.restore();
+}
+
+function drawCountdown() {
+  const isGo = countdown === 0;
+  const text  = isGo ? 'GO!' : String(countdown);
+  const color = isGo ? '#00ff88' : '#ffffff';
+  // Progress trong 1 giây: 0→1
+  const prog  = Math.min(1, (nowMs() - countdownAt) / 1000);
+  // Scale lớn lúc mới hiện, thu nhỏ dần
+  const scale = 1.3 - prog * 0.3;
+  const sz    = clamp(W / 5, 80, 160) * scale;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `900 ${sz}px Arial`;
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur  = 50;
+  ctx.globalAlpha = isGo ? Math.max(0, 1 - prog * 2) : 1;
+  ctx.fillText(text, W / 2, H / 2);
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawPaused() {
+  ctx.fillStyle = 'rgba(0,0,0,.42)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${clamp(W/13, 48, 88)}px Arial`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('⏸ TẠM DỪNG', W/2, H/2 - 20);
+  ctx.font = `600 ${clamp(W/60, 16, 24)}px Arial`;
+  ctx.fillStyle = '#d0d0d0';
+  ctx.fillText('Nhấn Space hoặc nút Tiếp tục để chơi', W/2, H/2 + 48);
+  ctx.restore();
+}
+
+// ── Split-mode helpers ─────────────────────────────────────────────────
+
+function addPartsFor(obj, count, power, p) {
+  const n = Math.min(count, MAX_PARTICLES - p.parts.length);
+  for (let i=0;i<n;i++) p.parts.push(new Particle(obj.x, obj.y, obj.color, power));
+  if (obj.inner) { const n2 = Math.min(n>>1, MAX_PARTICLES - p.parts.length); for (let i=0;i<n2;i++) p.parts.push(new Particle(obj.x, obj.y, obj.inner, power)); }
+}
+
+function sliceForP(obj, p) {
+  obj.sliced = true;
+  p.combo++; p.comboT = nowMs();
+  if (obj.type === 'bomb') {
+    if (p.shield) { p.shield = false; p.flashRed = 8; addPartsFor(obj, 16, 1, p); playItem(); }
+    else {
+      p.lives--; p.combo = 0; p.flashRed = 20; p.shakeFrames = 18;
+      addPartsFor(obj, 28, 1.25, p); playBoom();
+      if (p.lives <= 0) { p.over = true; if(p.score>p.hi){p.hi=p.score;localStorage.setItem('fn_p'+p.side+'_hi',p.hi);} }
+    }
+    return;
+  }
+  if (obj.type === 'item') {
+    if (obj.name==='star')        p.score += 5;
+    else if (obj.name==='life')   p.lives = Math.min(MAX_LIVES, p.lives+1);
+    else if (obj.name==='boost')  p.boostUntil = nowMs()+10000;
+    else if (obj.name==='freeze') p.slowUntil  = nowMs()+5000;
+    else if (obj.name==='shield') p.shield = true;
+    addPartsFor(obj, 34, 1.2, p); playItem(); return;
+  }
+  const cb = p.combo>=5?2:p.combo>=3?1:0;
+  p.score += obj.points + cb;
+  addPartsFor(obj, 24, 1, p); playSwoosh();
+  p.halves.push(new HalfFruit(obj.x, obj.y, obj, -1));
+  p.halves.push(new HalfFruit(obj.x, obj.y, obj,  1));
+}
+
+function maybeSplitSpawn(t, p) {
+  const maxObj = Math.floor(MAX_OBJECTS / 2);
+  if (p.objects.length >= maxObj) return;
+  const slowF = nowMs() < p.slowUntil ? 1.4 : 1;
+  const interval = clamp((BASE_INTERVAL - p.score*7) * slowF / gameSpeed, 440, 1400);
+  if (t - p.lastSpawn > interval) {
+    const batch = Math.random() < clamp(p.score/120,.1,.4) ? Math.floor(rand(2,4)) : 1;
+    for (let i=0; i<batch && p.objects.length<maxObj; i++) p.objects.push(new FlyingObject(p.side, p.score));
+    p.lastSpawn = t;
+  }
+}
+
+function drawSplitTrail(trail, colorFn) {
+  if (trail.length < 2) return;
+  ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+  for (let i=1;i<trail.length;i++){const t=i/trail.length;ctx.beginPath();ctx.moveTo(trail[i-1].x,trail[i-1].y);ctx.lineTo(trail[i].x,trail[i].y);ctx.strokeStyle=colorFn(t,.28);ctx.lineWidth=Math.max(4,t*(IS_MOBILE?26:20));ctx.stroke();}
+  for (let i=1;i<trail.length;i++){const t=i/trail.length;ctx.beginPath();ctx.moveTo(trail[i-1].x,trail[i-1].y);ctx.lineTo(trail[i].x,trail[i].y);ctx.strokeStyle=colorFn(t,.92);ctx.lineWidth=Math.max(2,t*(IS_MOBILE?9:7));ctx.stroke();}
+  ctx.restore();
+}
+
+function drawSplitTip(tip, pLives) {
+  if (!tip) return;
+  const scale = pLives<=2?1.3:1;
+  const outerR=(IS_MOBILE?20:18)*scale, innerR=(IS_MOBILE?11:9)*scale;
+  const color = pLives<=2?'rgba(255,120,80,.92)':'rgba(80,230,255,.92)';
+  ctx.beginPath();ctx.arc(tip.x,tip.y,outerR,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.18)';ctx.fill();
+  ctx.beginPath();ctx.arc(tip.x,tip.y,innerR,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+}
+
+function drawPlayerHUD(p) {
+  const hw = W/2, ox = p.side*hw;
+  const pad=12, sz=clamp(hw/28,18,36);
+  ctx.save();
+  ctx.textBaseline='top'; ctx.textAlign='left';
+  // Player label
+  ctx.font=`900 ${sz*.7}px Arial`; ctx.fillStyle=p.side===0?'#00eeff':'#ffaa00';
+  ctx.fillText(`P${p.side+1}`, ox+pad, IS_MOBILE?50:62);
+  // Score
+  ctx.font=`900 ${sz}px Arial`; ctx.strokeStyle='rgba(0,0,0,.78)'; ctx.lineWidth=Math.max(3,sz*.12);
+  ctx.strokeText(`${p.score}`, ox+pad, IS_MOBILE?66:82); ctx.fillStyle='#fff';
+  ctx.fillText(`${p.score}`, ox+pad, IS_MOBILE?66:82);
+  // Best
+  ctx.font=`700 ${Math.max(11,sz*.35)}px Arial`; ctx.fillStyle='#b8f9ff';
+  ctx.fillText(`BEST ${p.hi}`, ox+pad+2, (IS_MOBILE?66:82)+sz+3);
+  // Timers
+  let ty=(IS_MOBILE?66:82)+sz+22;
+  if(p.shield){ctx.fillStyle='#aabbff';ctx.font=`700 ${Math.max(10,sz*.32)}px Arial`;ctx.fillText('🛡️ Shield',ox+pad,ty);ty+=18;}
+  if(nowMs()<p.boostUntil){ctx.fillStyle='#ffcc00';ctx.font=`700 ${Math.max(10,sz*.32)}px Arial`;ctx.fillText(`⚡${Math.ceil((p.boostUntil-nowMs())/1000)}s`,ox+pad,ty);ty+=18;}
+  if(nowMs()<p.slowUntil){ctx.fillStyle='#8eeeff';ctx.font=`700 ${Math.max(10,sz*.32)}px Arial`;ctx.fillText(`❄️${Math.ceil((p.slowUntil-nowMs())/1000)}s`,ox+pad,ty);}
+  // Lives (right side of each half)
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.font=`${IS_MOBILE?20:26}px serif`;
+  const lstep=IS_MOBILE?24:32, lx=ox+hw-pad, ly=IS_MOBILE?36:34;
+  for(let i=0;i<MAX_LIVES;i++){ctx.fillStyle=i<p.lives?'#ff3355':'rgba(255,255,255,.22)';ctx.fillText('♥',lx-i*lstep,ly);}
+  // Combo
+  if(p.combo>=3 && nowMs()-p.comboT<900){
+    const age=(nowMs()-p.comboT)/900;
+    ctx.globalAlpha=1-age; ctx.font=`900 ${clamp(hw/14,32,58)-age*8}px Arial`;
+    ctx.fillStyle='#00eeff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`COMBO ×${p.combo}!`, ox+hw/2, H/2-60);
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+function drawPlayerOver(p) {
+  const hw=W/2, ox=p.side*hw;
+  ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fillRect(ox,0,hw,H);
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=`900 ${clamp(hw/8,36,68)}px Arial`;
+  ctx.fillStyle='#ff3355'; ctx.shadowColor='#ff3355'; ctx.shadowBlur=20;
+  ctx.fillText('GAME OVER', ox+hw/2, H/2-30);
+  ctx.shadowBlur=0; ctx.font=`700 ${clamp(hw/18,18,30)}px Arial`;
+  ctx.fillStyle='#fff'; ctx.fillText(`Score: ${p.score}  Best: ${p.hi}`, ox+hw/2, H/2+24);
+  ctx.restore();
+}
+
+function drawPlayerHalf(p, dt, t) {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(p.side*(W/2), 0, W/2, H); ctx.clip();
+  if (p.shakeFrames>0){ctx.translate(rand(-7,7),rand(-7,7));p.shakeFrames--;}
+  if (p.flashRed>0){ctx.fillStyle=`rgba(220,0,0,${p.flashRed/20*.34})`;ctx.fillRect(p.side*(W/2),0,W/2,H);p.flashRed--;}
+  if (!p.over) {
+    maybeSplitSpawn(t, p);
+    const alive=[];
+    for (const obj of p.objects) {
+      const ok=obj.update(dt, p.slowUntil);
+      if (ok) { if(obj.hitTest(p.tip)) sliceForP(obj,p); else alive.push(obj); }
+      else if(obj.missed && obj.type==='fruit'){p.lives--;p.combo=0;if(p.lives<=0){p.over=true;if(p.score>p.hi){p.hi=p.score;localStorage.setItem('fn_p'+p.side+'_hi',p.hi);}}}
+    }
+    p.objects=alive;
+    p.halves=p.halves.filter(h=>{const ok=h.update(dt);h.draw();return ok;});
+  } else { p.halves.forEach(h=>h.draw()); }
+  p.parts=p.parts.filter(pt=>{const ok=p.over?pt.life>0:pt.update(dt);pt.draw();return ok;});
+  for(const obj of p.objects) obj.draw();
+  drawSplitTrail(p.trail, p.side===0 ? TRAIL_CLR_P0 : TRAIL_CLR_P1);
+  drawSplitTip(p.tip, p.lives);
+  drawPlayerHUD(p);
+  if(p.over) drawPlayerOver(p);
+  ctx.restore();
+}
+
+// ── End split helpers ──────────────────────────────────────────────────
+
+function detectHand(t) {
+  if (!handLandmarker || video.readyState < 2) return;
+  if (t - lastDetectMs < DETECT_EVERY_MS) return;
+  if (video.currentTime === lastVideoTime) return;
+  lastDetectMs = t;
+  lastVideoTime = video.currentTime;
+
+  const result = handLandmarker.detectForVideo(video, t);
+  const maxT = (nowMs() < boostUntil ? 2 : 1) * (IS_MOBILE ? TRAIL_LEN_MOBILE : TRAIL_LEN_PC);
+  lastHandCount = result.landmarks ? result.landmarks.length : 0;
+
+  // ── Split mode: assign each hand to a player by screen position ──
+  if (SP) {
+    SP[0].noHand++; SP[1].noHand++;
+    SP[0].tip = null; SP[1].tip = null;
+    if (result.landmarks) {
+      for (const lm of result.landmarks) {
+        // lm[0] = wrist; mirrored x so >0.5 = left side of screen = P0
+        const side = lm[0].x > 0.5 ? 0 : 1;
+        const p = SP[side];
+        const maxTP = (nowMs() < p.boostUntil ? 2 : 1) * (IS_MOBILE ? TRAIL_LEN_MOBILE : TRAIL_LEN_PC);
+        p.noHand = 0;
+        const x = (1-lm[8].x)*W, y = lm[8].y*H;
+        p.tip = {x,y};
+        p.trail.push({x,y});
+        while(p.trail.length > maxTP) p.trail.shift();
+      }
+    }
+    for (const p of SP) { if(p.noHand>4 && p.trail.length>0) p.trail.shift(); }
+    return; // skip single-player fingertip update
+  }
+
+  // ── Single mode — all hands ───────────────────────────────────────
+  // Remap landmark coords khi camera zoom
+  function lmToScreen(lm8) {
+    if (cameraZoom === 1.0) {
+      return { x: (1 - lm8.x) * W, y: lm8.y * H };
+    }
+    const off = (1 - 1/cameraZoom) / 2; // vùng bị crop (mỗi bên)
+    const sx = (lm8.x - off) * cameraZoom; // 0-1 trong khung hiển thị
+    const sy = (lm8.y - off) * cameraZoom;
+    return { x: (1 - sx) * W, y: sy * H };
+  }
+
+  if (result.landmarks && result.landmarks.length > 0) {
+    noHandFrames = 0;
+    fingertips = result.landmarks.map(lm => lmToScreen(lm[8]));
+    fingertip = fingertips[0];
+    trail.push(fingertip);
+    while (trail.length > maxT) trail.shift();
+    // Second hand trail
+    if (fingertips.length > 1) {
+      trail2.push(fingertips[1]);
+      while (trail2.length > maxT) trail2.shift();
+    } else if (trail2.length > 0) trail2.shift();
+  } else {
+    noHandFrames++;
+    fingertip = null;
+    fingertips = [];
+    // Giữ trail 3 frame (tránh chớp khi miss 1-2 frame), sau đó xóa hẳn
+    if (noHandFrames > 3) {
+      trail = []; trail2 = [];
+    }
+  }
+}
+
+function gameLoop(t) {
+  if (!running) return;
+  const minFrameMs = 1000 / TARGET_FPS;
+  if (t - lastFrameMs < minFrameMs) {
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+  const dt = Math.min(42, t - lastFrameMs || 16.67);
+  fpsSmooth = fpsSmooth * 0.9 + (1000 / Math.max(dt, 1)) * 0.1;
+  lastFrameMs = t;
+
+  detectHand(t);
+
+  ctx.save();
+  drawCamera();
+
+  // ── Split mode: 2 independent players ──────────────────────────────
+  if (SP) {
+    for (const p of SP) drawPlayerHalf(p, dt, t);
+    // Divider
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+    ctx.lineWidth = 2; ctx.setLineDash([12,8]);
+    ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+    // Nút chơi lại khi cả 2 bên đều over
+    if (SP[0].over && SP[1].over) {
+      const bw = 220, bh = 52, bx = W/2 - bw/2, by = H/2 + 62;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 999) : ctx.rect(bx, by, bw, bh);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.font = `700 ${clamp(W/40, 16, 22)}px Arial`;
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('🔄 Chơi lại', W/2, by + bh/2);
+      ctx.restore();
+    }
+    if (paused) drawPaused();
+    if (debugMode) drawDebug();
+    ctx.restore();
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  // ── Single player ───────────────────────────────────────────────────
+  if (shakeFrames > 0) { ctx.translate(rand(-9,9),rand(-9,9)); shakeFrames--; }
+  if (flashRed > 0) { ctx.fillStyle=`rgba(220,0,0,${flashRed/20*.34})`; ctx.fillRect(0,0,W,H); flashRed--; }
+
+  // ── Countdown 3-2-1-GO ─────────────────────────────────────────────
+  if (countdown >= 0) {
+    drawCountdown();
+    if (nowMs() - countdownAt >= 1000) {
+      countdown--;
+      countdownAt = nowMs();
+      if (countdown >= 1) playTimeBeep();        // beep mỗi số
+      else if (countdown === 0) playFile('item', 0.6); // GO! sound
+      // countdown === -1 → bắt đầu chơi
+    }
+    ctx.restore();
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  if (!paused && !gameOver) {
+    // Time Attack countdown
+    if (gameMode === 'timeattack') {
+      const prevSec = Math.ceil(timeLeft);
+      timeLeft -= dt / 1000;
+      if (timeLeft <= 0) { timeLeft = 0; playTimeUp(); endGame(); }
+      else if (timeLeft <= 10 && Math.ceil(timeLeft) < prevSec) playTimeBeep();
+    }
+    // Streak check (15s no miss → ×2)
+    if (!streakActive && nowMs() - noMissSince >= 15000) {
+      streakActive = true;
+    }
+
+    maybeSpawn(t);
+    const alive = [];
+    for (const obj of objects) {
+      const ok = obj.update(dt, slowUntil, magnetUntil);
+      if (ok) {
+        if (fingertips.some(tip => obj.hitTest(tip))) {
+          if (!damageObject(obj)) alive.push(obj);
+        } else if (!obj.sliced) { // chain có thể đã slice trong lần lặp này
+          alive.push(obj);
+        }
+      } else {
+        if (obj.missed && obj.type === 'fruit') {
+          if (gameMode === 'classic') { lives--; }
+          comboCount = 0;
+          noMissSince = nowMs(); streakActive = false;
+          if (lives <= 0) endGame();
+        }
+      }
+    }
+    objects = alive;
+    halves = halves.filter(h => { const ok = h.update(dt); h.draw(); return ok; });
+  } else { halves.forEach(h => h.draw()); }
+
+  particles = particles.filter(p => {
+    const alive = paused ? p.life > 0 : p.update(dt);
+    p.draw(); return alive;
+  });
+
+  for (const obj of objects) obj.draw();
+  drawTrail();
+  drawSplitTrail(trail2, TRAIL_CLR_P1);
+  drawFingertip();
+  drawHUD();
+  if (paused && !gameOver) drawPaused();
+  if (gameOver) drawGameOver();
+  if (debugMode) drawDebug();
+
+  ctx.restore();
+  requestAnimationFrame(gameLoop);
+}
+
+async function init() {
+  if (initialized) return;
+  initialized = true;
+  startBtn.disabled = true;
+  startBtn.textContent = 'Đang mở camera...';
+  statusEl.textContent = 'Đang xin quyền camera...';
+
+  // Camera (không bắt buộc — nếu lỗi vẫn chơi được bằng chuột/touch)
+  let cameraOk = false;
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('HTTPS required');
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: 'user',
+        width: { ideal: IS_MOBILE ? 960 : 1280 },
+        height: { ideal: IS_MOBILE ? 540 : 720 },
+        frameRate: { ideal: IS_MOBILE ? 30 : 60, max: IS_MOBILE ? 30 : 60 }
+      }
+    });
+    video.srcObject = stream;
+    await video.play();
+    cameraOk = true;
+    statusEl.textContent = 'Camera OK. Đang tải model MediaPipe...';
+  } catch (e) {
+    statusEl.textContent = '📵 Không có camera — dùng chuột hoặc chạm màn hình để chơi.';
+  }
+
+  // MediaPipe hand detection (chỉ load nếu có camera)
+  if (cameraOk) {
+    try {
+      // Thử load local (sau khi chạy setup-mediapipe.bat), fallback CDN
+      const LOCAL = '/node_modules/@mediapipe/tasks-vision';
+      const CDN   = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+
+      let FilesetResolver, HandLandmarker;
+      // Kiểm tra local có sẵn không trước khi import
+      const localOk = await fetch(LOCAL + '/vision_bundle.mjs', { method: 'HEAD' })
+        .then(r => r.ok).catch(() => false);
+
+      if (localOk) {
+        statusEl.textContent = 'Load MediaPipe local...';
+        ({ FilesetResolver, HandLandmarker } = await import(LOCAL + '/vision_bundle.mjs'));
+        mpSource = 'local ✓';
+      } else {
+        statusEl.textContent = 'Load MediaPipe từ CDN...';
+        try {
+          ({ FilesetResolver, HandLandmarker } = await import(CDN + '/+esm'));
+          mpSource = 'cdn ✓';
+        } catch {
+          mpSource = 'failed ✗';
+          throw new Error('Không có internet và chưa cài local. Chạy setup-mediapipe.bat trên máy tính khi có mạng.');
+        }
+      }
+
+      let vision;
+      try {
+        vision = await FilesetResolver.forVisionTasks(LOCAL + '/wasm');
+      } catch {
+        vision = await FilesetResolver.forVisionTasks(CDN + '/wasm');
+      }
+
+      // Model: local file ưu tiên (hand_landmarker.task trong thư mục Game)
+      let modelPath = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task';
+      try {
+        const r = await fetch('/hand_landmarker.task', { method: 'HEAD' });
+        if (r.ok) { modelPath = '/hand_landmarker.task'; modelSource = 'local ✓'; }
+        else modelSource = 'cdn';
+      } catch { modelSource = 'cdn'; }
+
+      const mpOptions = {
+        baseOptions: {
+          modelAssetPath: modelPath,
+          delegate: 'GPU'
+        },
+        runningMode: 'VIDEO',
+        numHands: 2,
+        minHandDetectionConfidence: IS_MOBILE ? 0.50 : 0.56,
+        minHandPresenceConfidence: IS_MOBILE ? 0.50 : 0.56,
+        minTrackingConfidence: IS_MOBILE ? 0.46 : 0.52
+      };
+      try {
+        handLandmarker = await HandLandmarker.createFromOptions(vision, mpOptions);
+      } catch {
+        // GPU không khả dụng → thử lại với CPU
+        mpOptions.baseOptions.delegate = 'CPU';
+        handLandmarker = await HandLandmarker.createFromOptions(vision, mpOptions);
+      }
+    } catch (e) {
+      mpSource = 'failed ✗';
+      statusEl.textContent = '⚠️ MediaPipe lỗi: ' + e.message + ' — dùng chuột/touch.';
+    }
+  }
+
+  preloadSounds(); // load WAV files in background
+  startOverlay.style.display = 'none';
+  statusEl.textContent = cameraOk
+    ? (handLandmarker ? (IS_MOBILE ? 'Mobile: 30FPS, camera ON.' : 'PC: 60FPS, camera HD.') : 'Camera OK — dùng chuột/touch.')
+    : '📵 No camera — dùng chuột hoặc chạm màn hình.';
+  setTimeout(() => { if (statusEl.textContent) statusEl.textContent = ''; }, 2600);
+  resetGame();
+  running = true;
+  lastFrameMs = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function startNoCam(mode = 'classic') {
+  gameMode = mode;
+  preloadSounds();
+  startOverlay.style.display = 'none';
+  statusEl.textContent = mode === 'timeattack' ? '⏱ Time Attack!' : '🖱️ Mouse / Touch mode';
+  setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  resetGame();
+  running = true;
+  lastFrameMs = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+startBtn.addEventListener('click', () => { gameMode = 'classic'; init(); });
+document.getElementById('startNoCamBtn').addEventListener('click', () => startNoCam('classic'));
+document.getElementById('startTimeBtn').addEventListener('click', () => startNoCam('timeattack'));
+
+// Vẽ màn hình chờ trước khi start
+function idleDraw() {
+  if (running) return;
+  drawBackground();
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${clamp(W/16, 42, 88)}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.fillText('🍉 Fruit Ninja', W/2, H/2 - 30);
+  ctx.font = `600 ${clamp(W/60, 16, 24)}px Arial`;
+  ctx.fillStyle = 'rgba(255,255,255,.68)';
+  ctx.fillText('Chọn chế độ chơi bên dưới', W/2, H/2 + 40);
+  ctx.restore();
+  requestAnimationFrame(idleDraw);
+}
+idleDraw();
+</script>
+</body>
+</html>
